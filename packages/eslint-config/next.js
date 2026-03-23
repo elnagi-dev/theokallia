@@ -6,6 +6,7 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReact from "eslint-plugin-react";
 import globals from "globals";
 import pluginNext from "@next/eslint-plugin-next";
+import pluginUnicorn from "eslint-plugin-unicorn";
 import { config as baseConfig } from "./base.js";
 
 /**
@@ -54,4 +55,40 @@ export const nextJsConfig = [
       "react/react-in-jsx-scope": "off",
     },
   },
+
+  // Theokallia custom rules
+  {
+    plugins: {
+      unicorn: pluginUnicorn,
+    },
+    rules: {
+      // File naming — kebab-case
+      "unicorn/filename-case": ["error", {
+        cases: { kebabCase: true }
+      }],
+
+      // No <img> — use Next.js <Image>
+      "@next/next/no-img-element": "error",
+
+      // No <a> for internal links — use Next.js <Link>
+      "@next/next/no-html-link-for-pages": "error",
+
+      // TypeScript naming conventions
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "function",
+          format: ["PascalCase", "camelCase"]
+        },
+        {
+          selector: "variable",
+          format: ["camelCase", "PascalCase", "UPPER_CASE"]
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"]
+        }
+      ]
+    }
+  }
 ];
