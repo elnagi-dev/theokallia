@@ -54,10 +54,8 @@ const FooterColumn = ({
 
 const Footer = () => {
   return (
-    <footer className="container mx-auto bg-footer w-full px-20 pt-16">
-
-
-      <div className='flex items-start justify-between'>
+    <footer className="bg-footer container mx-auto w-full px-20 pt-16">
+      <div className="flex items-start justify-between">
         <div>
           <div className="flex justify-between gap-10">
             <FooterColumn heading="Shop" links={shopLinks} />
@@ -94,6 +92,7 @@ const Footer = () => {
             src="/logo-dark.webp"
             alt="Theokallia"
             fill
+            sizes="(max-width: 768px) 192px, 192px"
             className="object-contain"
           />
         </div>

@@ -11,6 +11,7 @@ const WhyChooseUs = () => {
             alt="Gold necklace"
             fill
             sizes="50vw"
+            loading="eager"
             className="object-cover object-center"
           />
         </div>
@@ -20,7 +21,7 @@ const WhyChooseUs = () => {
           {/* Top icons */}
           <div className="absolute top-12 left-12">
             <Image
-              src="/images/icons/sparkle.svg"
+              src="/icons/sparkle.svg"
               alt="sparkle"
               width={32}
               height={32}
@@ -28,17 +29,18 @@ const WhyChooseUs = () => {
           </div>
           <div className="absolute top-12 right-12">
             <Image
-              src="/images/icons/diamond.svg"
+              src="/icons/diamond.svg"
               alt="diamond"
               width={32}
               height={32}
+              style={{ width: 'auto', height: 'auto' }}
             />
           </div>
 
           {/* Title */}
           <div className="relative">
             <Image
-              src="/images/icons/crown.svg"
+              src="/icons/crown.svg"
               alt="crown"
               width={28}
               height={28}
@@ -58,7 +60,7 @@ const WhyChooseUs = () => {
           {/* Bottom sparkle */}
           <div className="absolute right-24 bottom-18">
             <Image
-              src="/images/icons/sparkle.svg"
+              src="/icons/sparkle.svg"
               alt="sparkle"
               width={32}
               height={32}
@@ -70,18 +72,13 @@ const WhyChooseUs = () => {
         <div className="relative flex flex-col items-center justify-center px-16 py-12">
           {/* Star icon */}
           <div className="absolute top-16 left-32 mb-6">
-            <Image
-              src="/images/icons/star.svg"
-              alt="star"
-              width={32}
-              height={32}
-            />
+            <Image src="/icons/star.svg" alt="star" width={32} height={32} />
           </div>
 
           {/* Title */}
           <div className="relative">
             <Image
-              src="/images/icons/crown.svg"
+              src="/icons/crown.svg"
               alt="crown"
               width={28}
               height={28}
@@ -101,18 +98,20 @@ const WhyChooseUs = () => {
           {/* Bottom icons */}
           <div className="absolute right-20 bottom-28">
             <Image
-              src="/images/icons/ring.svg"
+              src="/icons/ring.svg"
               alt="ring"
               width={32}
               height={32}
+              style={{ width: 'auto', height: 'auto' }}
             />
           </div>
           <div className="absolute bottom-16 left-12">
             <Image
-              src="/images/icons/bag.svg"
+              src="/icons/bag.svg"
               alt="bag"
               width={32}
               height={32}
+              style={{ width: 'auto', height: 'auto' }}
             />
           </div>
         </div>
@@ -124,6 +123,7 @@ const WhyChooseUs = () => {
             alt="Gold V earring"
             fill
             sizes="50vw"
+            loading="eager"
             className="object-cover object-center"
           />
         </div>

@@ -33,6 +33,7 @@ const ShopPromotion = () => {
               src="/logo-light.webp"
               alt="Theokallia Logo"
               fill
+              sizes="240px"
               loading="eager"
               className="object-contain"
             />
@@ -40,7 +41,7 @@ const ShopPromotion = () => {
 
           {/* Promo Text */}
           <div className="absolute right-0 bottom-28 left-0 px-6 text-center font-sans">
-            <h2 className="mb-4 text-5xl leading-tight font-thin tracking-widest text-white uppercase font-le-jour">
+            <h2 className="mb-4 font-le-jour text-5xl leading-tight font-thin tracking-widest text-white uppercase">
               ENJOY
               <br />
               10% OFF
@@ -51,7 +52,7 @@ const ShopPromotion = () => {
             <p className="mb-6 text-sm tracking-wider text-white/70">
               Only Available from March 6th - March 20th
             </p>
-            <div className="flex justify-center mt-2">
+            <div className="mt-2 flex justify-center">
               <Button className="px-10 py-6 text-lg font-semibold tracking-widest text-white transition-colors">
                 Shop Now
               </Button>

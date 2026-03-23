@@ -3,7 +3,7 @@ import { Button } from '../ui/button'
 
 const Banner = () => {
   return (
-    <section className="container mx-auto relative my-10 h-screen w-full overflow-hidden">
+    <section className="relative container mx-auto my-10 h-screen w-full overflow-hidden">
       <Image
         src="/images/banner-image.webp"
         alt="Banner"
@@ -19,10 +19,11 @@ const Banner = () => {
       <div className="absolute top-5/8 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-6">
         <div className="relative flex items-end">
           <Image
-            src="/images/icons/crown-2.svg"
+            src="/icons/crown-2.svg"
             alt="crown"
             width={60}
             height={60}
+            style={{ width: 'auto', height: 'auto' }}
             className="absolute bottom-36 -left-16"
           />
           <h1 className="font-le-jour text-[10rem] leading-none font-medium tracking-widest text-white uppercase">
