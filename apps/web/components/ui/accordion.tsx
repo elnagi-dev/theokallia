@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Accordion as AccordionPrimitive } from 'radix-ui'
 
 import { cn } from '@/lib/utils'
-import { Minus, Plus } from 'lucide-react'
 
 const PlusIcon = () => (
   <svg

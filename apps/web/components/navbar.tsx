@@ -20,16 +20,18 @@ const Navbar = () => {
 
   return (
     <nav className="relative container mx-auto flex items-center justify-between px-20 py-4">
-      <div className="relative h-[50px] w-[200px] cursor-pointer">
-        <Image
-          src="/logo.webp"
-          alt="Theokallia Logo"
-          fill
-          sizes="200px"
-          className="object-contain"
-          priority
-        />
-      </div>
+      <Link href="/">
+        <div className="relative h-[50px] w-[200px] cursor-pointer">
+          <Image
+            src="/logo.webp"
+            alt="Theokallia Logo"
+            fill
+            sizes="200px"
+            className="object-contain"
+            priority
+          />
+        </div>
+      </Link>
 
       <div className="flex items-center justify-between gap-8 text-lg">
         {links.map((link) => (
@@ -54,7 +56,14 @@ const Navbar = () => {
 
         <div className="flex items-center gap-4 text-gray-400">
           <Heart size={20} strokeWidth={1.5} />
-          <ShoppingBag size={20} strokeWidth={1.5} />
+          <Link
+            href="/cart"
+            className={
+              pathname === '/cart' ? 'text-secondary' : 'text-foreground'
+            }
+          >
+            <ShoppingBag size={20} strokeWidth={1.5} />
+          </Link>
         </div>
       </div>
     </nav>
