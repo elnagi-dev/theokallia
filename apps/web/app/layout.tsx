@@ -4,6 +4,7 @@ import { Cormorant_Garamond } from 'next/font/google'
 import localFont from 'next/font/local'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
+import BackToTop from '@/components/back-to-top'
 
 const fontSans = Cormorant_Garamond({
   subsets: ['latin'],
@@ -43,6 +44,7 @@ export default function RootLayout({
       >
         <Navbar />
         <main className="flex-1">{children}</main>
+        <BackToTop />
         <Footer />
       </body>
     </html>

@@ -15,6 +15,7 @@ const page = () => {
             width={380}
             height={480}
             className="h-full w-full object-cover"
+            style={{ width: 'auto', height: 'auto' }}
           />
         </div>
 
@@ -40,7 +41,7 @@ const page = () => {
         </div>
       </div>
 
-      <div className='flex flex-col items-center justify-center pt-10'>
+      <div className="flex flex-col items-center justify-center pt-10">
         <h2 className="font-sans text-2xl font-light tracking-wide">
           Why choose us
         </h2>
