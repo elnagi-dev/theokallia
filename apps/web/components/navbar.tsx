@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
-import { Heart, ShoppingBag } from 'lucide-react'
+import { Heart, ShoppingBag, User } from 'lucide-react'
+import ProfileModal from '@/components/auth/profile-modal'
 
 const links = [
   { name: 'Home', href: '/' },
@@ -15,7 +16,13 @@ const links = [
   { name: 'Contact', href: '/contact' },
 ]
 
-const Navbar = () => {
+interface NavbarProps {
+  onOpenLogin: () => void
+  onOpenSignUp: () => void
+  isLoggedIn: boolean
+}
+
+const Navbar = ({ onOpenLogin, onOpenSignUp, isLoggedIn }: NavbarProps) => {
   const pathname = usePathname()
 
   return (
@@ -50,11 +57,27 @@ const Navbar = () => {
 
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4">
-          <Button variant="outline">Log In</Button>
-          <Button>Sign Up</Button>
+          {isLoggedIn ? (
+            <ProfileModal
+              trigger={
+                <User
+                  size={20}
+                  strokeWidth={1.5}
+                  className="cursor-pointer text-foreground"
+                />
+              }
+            />
+          ) : (
+            <>
+              <Button variant="outline" onClick={onOpenLogin}>
+                Log In
+              </Button>
+              <Button onClick={onOpenSignUp}>Sign Up</Button>
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-4 text-gray-400">
+        <div className="flex items-center gap-4 text-foreground">
           <Heart size={20} strokeWidth={1.5} />
           <Link
             href="/cart"

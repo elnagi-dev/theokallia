@@ -13,7 +13,7 @@ const page = () => {
           <h1 className="font-le-jour text-6xl leading-tight tracking-tight uppercase">
             Contact Us
           </h1>
-          <p className="max-w-md font-sans text-2xl/9 font-light text-black">
+          <p className="max-w-md font-cormorant-garamond text-2xl/9 font-light text-black">
             Have a question about our pieces, your order, or anything else? Our
             team is always here to assist you and ensure you have the best
             experience with us.

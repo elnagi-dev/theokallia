@@ -4,9 +4,9 @@ import React from 'react'
 const ShopBanner = () => {
   return (
     <section>
-      <div className="flex items-center justify-between bg-primary px-3 py-7 text-white">
-        <h3 className="font-le-jour text-3xl">
-          Luxury <span className="text-4xl font-semibold">Jewelry</span> For You
+      <div className="flex items-center justify-between bg-primary px-3 py-6 pt-4 text-white">
+        <h3 className="font-le-jour text-4xl">
+          Luxury <span className="text-8xl font-allure">Jewelry</span> For You
         </h3>
         <p className="w-2xs">
           Discover pieces designed to shine with you, every day.

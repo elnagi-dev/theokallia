@@ -16,10 +16,7 @@ const filterSections = [
     content: (
       <ul className="flex flex-col gap-2">
         {categories.map((cat) => (
-          <li
-            key={cat}
-            className="text-sm font-light tracking-wide text-foreground/80"
-          >
+          <li key={cat} className="tracking-wide">
             {cat}
           </li>
         ))}
@@ -33,8 +30,8 @@ const filterSections = [
 
 const SidebarFilter = () => {
   return (
-    <section className="w-[280px] px-6 font-serif">
-      <h2 className="mb-4 font-le-jour text-4xl font-light tracking-tight">
+    <section className="w-[280px] px-6 font-cormorant-garamond">
+      <h2 className="mb-4 font-allure text-6xl font-light tracking-tight">
         Filter
       </h2>
 
@@ -49,11 +46,11 @@ const SidebarFilter = () => {
             value={item.value}
             className={`${index === 0 ? 'border-t' : ''} border-b border-gray-500 py-1`}
           >
-            <AccordionTrigger className="group flex items-center justify-between py-4 font-le-jour text-xl font-light tracking-tight hover:no-underline">
+            <AccordionTrigger className="group flex items-center justify-between py-4 font-allure text-3xl font-light tracking-tight hover:no-underline">
               <span>{item.trigger}</span>
             </AccordionTrigger>
             {item.content && (
-              <AccordionContent className="pt-1 pb-4">
+              <AccordionContent className="pt-1 pb-4 text-xl text-gray-900">
                 {item.content}
               </AccordionContent>
             )}

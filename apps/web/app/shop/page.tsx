@@ -13,7 +13,7 @@ const page = () => {
       {/* Sticky header */}
       <div className="flex flex-col items-center justify-center bg-white px-20 py-20">
         <h2 className="text-center font-le-jour text-3xl">Discover Elegance</h2>
-        <p className="mt-2 max-w-3xl text-center font-sans text-xl/6 tracking-wide">
+        <p className="mt-2 max-w-3xl text-center font-cormorant-garamond text-xl/6 tracking-wide">
           Discover pieces designed to shine with you, every day.
         </p>
       </div>

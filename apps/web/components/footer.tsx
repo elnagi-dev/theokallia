@@ -39,12 +39,14 @@ const FooterColumn = ({
   links: { label: string; href: string }[]
 }) => (
   <div className="flex flex-col gap-4">
-    <h4 className="font-serif text-lg font-bold text-slate-900">{heading}</h4>
+    <h4 className="font-cormorant-garamond text-lg font-bold text-slate-900">
+      {heading}
+    </h4>
     {links.map((link) => (
       <Link
         key={link.label}
         href={link.href}
-        className="font-serif text-base text-slate-900 hover:text-gray-900"
+        className="font-cormorant-garamond text-base text-slate-900 hover:text-gray-900"
       >
         {link.label}
       </Link>
@@ -67,19 +69,19 @@ const Footer = () => {
 
         {/* Socials */}
         <div className="flex flex-col gap-4">
-          <h4 className="font-serif text-2xl font-bold text-gray-900">
+          <h4 className="font-cormorant-garamond text-2xl font-bold text-gray-900">
             Socials
           </h4>
           {socialLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="font-serif text-base text-slate-900"
+              className="font-cormorant-garamond text-base text-slate-900"
             >
               {link.label}
             </Link>
           ))}
-          <p className="mt-16 font-serif text-base text-slate-900">
+          <p className="mt-16 font-cormorant-garamond text-base text-slate-900">
             © 2026 Theokallia Jewellry
           </p>
         </div>

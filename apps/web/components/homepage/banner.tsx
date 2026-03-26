@@ -36,14 +36,18 @@ const Banner = () => {
         </Button>
 
         <div className="mt-6 flex items-center gap-6 text-gray-50">
-          <span className="font-serif text-2xl tracking-widest">Beauty</span>
+          <span className="font-cormorant-garamond text-2xl tracking-widest">
+            Beauty
+          </span>
           <div className="h-px w-20 bg-gray-50" />
           <span className="font-le-jour text-6xl text-yellow-500">2026</span>
           <div className="h-px w-20 bg-gray-50" />
-          <span className="font-serif text-2xl tracking-widest">Elegance</span>
+          <span className="font-cormorant-garamond text-2xl tracking-widest">
+            Elegance
+          </span>
         </div>
 
-        <p className="font-sans text-xl tracking-widest text-yellow-500">
+        <p className="font-cormorant-garamond text-xl tracking-widest text-yellow-500">
           Jewelry store
         </p>
       </div>

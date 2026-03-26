@@ -36,7 +36,7 @@ const Features = () => {
             className="fill-neutral-25 object-cover"
           />
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 font-sans text-black">
+          <div className="font-cormorant-garamond absolute inset-0 flex flex-col items-center justify-center gap-4 text-black">
             {features[0]?.icon}
             <div className="flex flex-col items-center justify-center space-y-2">
               <h3 className="text-2xl font-normal">{features[0]?.title}</h3>
@@ -57,7 +57,7 @@ const Features = () => {
             className="object-cover"
           />
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 font-sans text-black">
+          <div className="font-cormorant-garamond absolute inset-0 flex flex-col items-center justify-center gap-4 text-black">
             {features[1]?.icon}
             <div className="flex flex-col items-center justify-center space-y-2">
               <h3 className="text-2xl font-normal">{features[1]?.title}</h3>
@@ -78,7 +78,7 @@ const Features = () => {
             className="object-cover"
           />
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 font-sans text-black">
+          <div className="font-cormorant-garamond absolute inset-0 flex flex-col items-center justify-center gap-4 text-black">
             {features[2]?.icon}
             <div className="flex flex-col items-center justify-center space-y-2">
               <h3 className="text-2xl font-normal">{features[2]?.title}</h3>

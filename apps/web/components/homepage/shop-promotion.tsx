@@ -40,7 +40,7 @@ const ShopPromotion = () => {
           </div>
 
           {/* Promo Text */}
-          <div className="absolute right-0 bottom-28 left-0 px-6 text-center font-sans">
+          <div className="absolute right-0 bottom-28 left-0 px-6 text-center font-cormorant-garamond">
             <h2 className="mb-4 font-le-jour text-5xl leading-tight font-thin tracking-widest text-white uppercase">
               ENJOY
               <br />
