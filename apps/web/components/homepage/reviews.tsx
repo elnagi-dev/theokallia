@@ -7,21 +7,21 @@ const reviews = [
     rating: 3,
     review:
       'The craftsmanship is absolutely stunning. The moment I opened the box, I knew this piece would be something I treasure forever',
-    image: '/images/reviews/esther.webp',
+    image: null,
   },
   {
     name: 'Sophia L',
     rating: 4,
     review:
       "Elegant, timeless, and beautifully made. I've received so many compliments every time I wear my necklace",
-    image: '/images/reviews/sophia.webp',
+    image: null,
   },
   {
     name: 'Isabella M',
     rating: 5,
     review:
       'From the packaging to the quality of the jewelry, everything felt luxurious. It truly exceeded my expectations',
-    image: '/images/reviews/isabella.webp',
+    image: null,
   },
 ]
 
@@ -60,13 +60,13 @@ const Reviews = () => {
               {/* Header */}
               <div className="mb-6 flex items-center gap-4">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden">
-                  <Image
-                    src={review.image}
+                  {/* <Image
+                    src={review.image ||}
                     alt={review.name}
                     fill
                     sizes="64px"
                     className="object-cover object-center"
-                  />
+                  /> */}
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-lg font-extralight text-gray-800">

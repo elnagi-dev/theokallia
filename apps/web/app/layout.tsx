@@ -2,9 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Cormorant_Garamond } from 'next/font/google'
 import localFont from 'next/font/local'
-import Navbar from '@/components/navbar'
-import Footer from '@/components/footer'
-import BackToTop from '@/components/back-to-top'
+import ClientLayout from '@/components/client-layout'
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
@@ -38,10 +36,7 @@ export default function RootLayout({
       <body
         className={`${cormorantGaramond.variable} ${leJour.variable} ${allure.variable} flex min-h-full flex-col antialiased`}
       >
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <BackToTop />
-        <Footer />
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )
