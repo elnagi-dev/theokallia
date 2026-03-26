@@ -10,6 +10,7 @@ interface Product {
   category: string
   price: string
   badge: string | null
+  slug: string
 }
 
 interface ProductCardProps {
@@ -20,7 +21,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <div className="flex flex-col gap-2 font-cormorant-garamond">
       {/* Image */}
-      <Link href={`/shop/${product.id}`}>
+      <Link href={`/shop/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-gray-100">
           {product.badge && (
             <span className="absolute z-10 bg-primary px-6 py-1.5 text-sm text-white">
