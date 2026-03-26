@@ -50,7 +50,7 @@ const SidebarFilter = () => {
               <span>{item.trigger}</span>
             </AccordionTrigger>
             {item.content && (
-              <AccordionContent className="mb-10 pt-1 pb-4 text-xl text-gray-900">
+              <AccordionContent className="pt-1 pb-4 text-xl text-gray-900">
                 {item.content}
               </AccordionContent>
             )}
