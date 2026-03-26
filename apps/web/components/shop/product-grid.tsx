@@ -3,6 +3,7 @@ import ProductCard from './product-card'
 
 const products = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
+  slug: 'temi-gold-bracelets',
   category: 'Gold Bracelet',
   name: 'Temi',
   price: '₦5000',
