@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
 import { Heart, ShoppingBag, User } from 'lucide-react'
+import ProfileModal from '@/components/auth/profile-modal'
 
 const links = [
   { name: 'Home', href: '/' },
@@ -57,10 +58,14 @@ const Navbar = ({ onOpenLogin, onOpenSignUp, isLoggedIn }: NavbarProps) => {
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4">
           {isLoggedIn ? (
-            <User
-              size={20}
-              strokeWidth={1.5}
-              className="cursor-pointer text-foreground"
+            <ProfileModal
+              trigger={
+                <User
+                  size={20}
+                  strokeWidth={1.5}
+                  className="cursor-pointer text-foreground"
+                />
+              }
             />
           ) : (
             <>

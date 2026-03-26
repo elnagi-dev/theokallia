@@ -25,18 +25,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     setIsModalOpen(true)
   }
 
-  const closeModal = () => setIsModalOpen(false)
-
   return (
     <>
-      <Navbar onOpenLogin={openLogin} onOpenSignUp={openSignUp} isLoggedIn={isLoggedIn} />
+      <Navbar
+        onOpenLogin={openLogin}
+        onOpenSignUp={openSignUp}
+        isLoggedIn={isLoggedIn}
+      />
       <main className="flex-1">{children}</main>
       <BackToTop />
       <Footer />
       <AuthModal
         isOpen={isModalOpen}
         initialView={modalView}
-        onClose={closeModal}
+        onClose={() => setIsModalOpen(false)}
         onSuccess={() => setIsLoggedIn(true)}
       />
     </>
