@@ -16,7 +16,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   return (
-    <div className="flex flex-col gap-2 font-sans">
+    <div className="flex flex-col gap-2 font-cormorant-garamond">
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         {product.badge && (

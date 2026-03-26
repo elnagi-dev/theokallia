@@ -39,9 +39,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
+  --font-cormorant-garamond: var(--font-cormorant-garamond);
+  --font-allure: var(--font-allure);
   --font-le-jour: var(--font-le-jour), serif;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -94,9 +93,9 @@
   --sidebar-accent-foreground: oklch(0.2046 0 0);
   --sidebar-border: oklch(0.9219 0 0);
   --sidebar-ring: oklch(0.7090 0 0);
-  --font-sans: Cormorant Garamond, ui-serif, serif;
-  --font-serif: Cormorant Garamond, ui-serif, serif;
-  --font-mono: Cormorant Garamond, ui-serif, serif;
+  --font-cormorant-garamond: 'Cormorant Garamond', ui-serif, serif;
+  --font-allure: 'Allure', sans-serif;
+  --font-le-jour: 'Le Jour Serif Personal Use Only', serif;
   --radius: 0rem;
   --shadow-x: 0;
   --shadow-y: 1px;
@@ -149,9 +148,9 @@
   --sidebar-accent-foreground: oklch(0.9851 0 0);
   --sidebar-border: oklch(1.0000 0 0);
   --sidebar-ring: oklch(0.5555 0 0);
-  --font-sans: Cormorant Garamond, ui-serif, serif;
-  --font-serif: Cormorant Garamond, ui-serif, serif;
-  --font-mono: Cormorant Garamond, ui-serif, serif;
+  --font-cormorant-garamond: Cormorant Garamond, ui-serif, serif;
+  --font-allure: 'Allure', sans-serif;
+  --font-le-jour: 'Le Jour Serif Personal Use Only', serif;
   --radius: 0rem;
   --shadow-x: 0;
   --shadow-y: 1px;
@@ -171,7 +170,7 @@
 
 @layer base {
   html {
-    @apply font-sans;
+    @apply font-cormorant-garamond;
     max-width: 100vw;
     overflow-x: hidden;
     /* margin-inline: auto; */

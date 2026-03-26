@@ -6,24 +6,20 @@ import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import BackToTop from '@/components/back-to-top'
 
-const fontSans = Cormorant_Garamond({
+const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-sans',
-})
-
-const fontSerif = Cormorant_Garamond({
-  subsets: ['latin'],
-  variable: '--font-serif',
-})
-
-const fontMono = Cormorant_Garamond({
-  subsets: ['latin'],
-  variable: '--font-mono',
+  variable: '--font-cormorant-garamond',
 })
 
 const leJour = localFont({
   src: '../public/fonts/Le Jour Serif Personal Use Only.otf',
   variable: '--font-le-jour',
+  display: 'swap',
+})
+
+const allure = localFont({
+  src: '../public/fonts/Allure.otf',
+  variable: '--font-allure',
   display: 'swap',
 })
 
@@ -40,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body
-        className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${leJour.variable} flex min-h-full flex-col antialiased`}
+        className={`${cormorantGaramond.variable} ${leJour.variable} ${allure.variable} flex min-h-full flex-col antialiased`}
       >
         <Navbar />
         <main className="flex-1">{children}</main>

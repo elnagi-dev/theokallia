@@ -23,11 +23,11 @@ const page = () => {
           <h1 className="font-le-jour text-6xl tracking-tight uppercase">
             About Us
           </h1>
-          <p className="font-sans text-2xl/8 font-light text-black">
-            At Theokallia, we believe jewelry is more than an accessory . it's a
+          <p className="font-cormorant-garamond text-2xl/8 font-light text-black">
+            At Theokallia, we believe jewelry is more than an accessory &apos; it&apos;s a
             reflection of identity, elegance, and timeless beauty. Every piece
             is thoughtfully designed to elevate your everyday style while
-            celebrating life's most meaningful moments.
+            celebrating life&apos;s most meaningful moments.
           </p>
 
           <div>
@@ -42,7 +42,7 @@ const page = () => {
       </div>
 
       <div className="flex flex-col items-center justify-center pt-10">
-        <h2 className="font-sans text-2xl font-light tracking-wide">
+        <h2 className="font-cormorant-garamond text-2xl font-light tracking-wide">
           Why choose us
         </h2>
         <Features />

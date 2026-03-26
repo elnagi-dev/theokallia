@@ -52,7 +52,7 @@ const WhyChooseUs = () => {
           </div>
 
           {/* Body */}
-          <p className="w-xs text-center font-sans text-lg leading-relaxed text-gray-700">
+          <p className="w-xs text-center font-cormorant-garamond text-lg leading-relaxed text-gray-700">
             Every piece is thoughtfully designed and expertly crafted to reflect
             elegance, quality, and lasting beauty.
           </p>
@@ -90,7 +90,7 @@ const WhyChooseUs = () => {
           </div>
 
           {/* Body */}
-          <p className="w-xs text-center font-sans text-lg leading-relaxed text-gray-700">
+          <p className="w-xs text-center font-cormorant-garamond text-lg leading-relaxed text-gray-700">
             We combine premium materials, expert craftsmanship, and timeless
             design to create pieces you&apos;ll treasure forever.
           </p>
