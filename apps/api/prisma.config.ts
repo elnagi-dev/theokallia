@@ -7,7 +7,7 @@ export default defineConfig({
     path: './prisma/migrations',
   },
   datasource: {
-    // DATABASE_URL is read from .env via dotenv/config import above
+    // DATABASE_URL is read from apps/api/.env
     url: env('DATABASE_URL'),
   },
 })

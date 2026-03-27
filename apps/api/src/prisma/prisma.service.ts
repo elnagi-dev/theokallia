@@ -1,9 +1,24 @@
 import { Injectable } from '@nestjs/common'
-import { PrismaClient, prisma } from '@theokallia/db'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
 
 @Injectable()
 export class PrismaService {
-  // Explicitly typed to avoid portable type reference error
-  // Prisma 7 manages connections automatically — no manual $connect() needed
-  client: PrismaClient = prisma
+  // Single PrismaClient instance shared across the entire NestJS app
+  private readonly prisma: PrismaClient
+
+  constructor() {
+    // Prisma 7 requires a database adapter to be passed explicitly
+    // PrismaPg connects to PostgreSQL using the DATABASE_URL env var
+    const adapter = new PrismaPg({
+      connectionString: process.env.DATABASE_URL!,
+    })
+    this.prisma = new PrismaClient({ adapter })
+  }
+
+  // Expose prisma client methods directly
+  // This allows services to call this.prisma.user.findMany() etc.
+  get client(): PrismaClient {
+    return this.prisma
+  }
 }

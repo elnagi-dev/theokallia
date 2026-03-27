@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated"
 }
 
 datasource db {
@@ -10,15 +9,15 @@ datasource db {
 // Mirrors the Supabase auth.users table via supabaseId
 // Supabase owns authentication — this table owns app-specific user data
 model User {
-  id         String   @id @default(cuid())
-  supabaseId String   @unique // links to auth.users.id in Supabase
-  email      String   @unique
+  id         String    @id @default(cuid())
+  supabaseId String    @unique // links to auth.users.id in Supabase
+  email      String    @unique
   name       String
-  role       String   @default("customer") // 'customer' | 'admin'
+  role       String    @default("customer") // 'customer' | 'admin'
   orders     Order[]
   reviews    Review[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Category {
@@ -90,5 +89,5 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
   productId String
   quantity  Int
-  price     Float // snapshot of price at time of purchase
+  price     Float   // snapshot of price at time of purchase
 }
