@@ -1,0 +1,32 @@
+{
+  "name": "@theokallia/db",
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "latest",
+    "dotenv": "^17.3.1",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@theokallia/typescript-config": "workspace:*",
+    "@types/pg": "^8.20.0",
+    "prisma": "latest",
+    "typescript": "^5.7.3",
+    "ts-node": "^10.9.2"
+  }
+}

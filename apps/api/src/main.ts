@@ -1,13 +1,42 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Security headers
+  app.use(helmet());
+
+  // Parse cookies (needed for Supabase httpOnly cookie sessions)
+  app.use(cookieParser());
+
+  // CORS — only allow frontend origins
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'https://theokallia.com',
+      'https://admin.theokallia.com',
+    ],
+    credentials: true, // required for httpOnly cookies to be sent cross-origin
+  });
+
+  // Global validation — strips unknown fields, auto-transforms DTOs
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('Theokallia API')
-    .setDescription('Jewellery store API')
+    .setDescription('Theokallia jewellery API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
@@ -15,6 +44,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(process.env.PORT ?? 3333);
+  await app.listen(3333);
 }
-bootstrap();
+
+void bootstrap();
