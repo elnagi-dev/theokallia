@@ -15,11 +15,17 @@ import { Eye, EyeOff } from 'lucide-react'
 interface LoginFormProps {
   onSwitchToSignUp: () => void
   onSuccess: () => void
+  onForgotPassword: () => void
+  onTerms: () => void
+  onPrivacy: () => void
 }
 
 export default function LoginForm({
   onSwitchToSignUp,
   onSuccess,
+  onForgotPassword,
+  onTerms,
+  onPrivacy,
 }: LoginFormProps) {
   const { mutate: login, isPending } = useLogin()
   const router = useRouter()
@@ -112,7 +118,10 @@ export default function LoginForm({
           )}
           <p className="text-xs text-gray-500">
             Forgot password?{' '}
-            <span className="cursor-pointer text-purple-700 underline">
+            <span
+              onClick={onForgotPassword}
+              className="cursor-pointer text-purple-700 underline"
+            >
               click here
             </span>
           </p>
@@ -142,11 +151,11 @@ export default function LoginForm({
       </p>
 
       <div className="mt-6 flex justify-center gap-3 text-xs text-gray-400">
-        <span className="cursor-pointer hover:text-gray-600">
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
           Terms of service
         </span>
         <span>|</span>
-        <span className="cursor-pointer hover:text-gray-600">
+        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
           Privacy policy
         </span>
       </div>

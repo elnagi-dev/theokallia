@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useVerifyOtp, useResendOtp } from '@/hooks/use-auth'
+import { useVerifyResetOtp, useResendResetOtp } from '@/hooks/use-auth'
 
-interface OtpFormProps {
+interface ResetOtpFormProps {
   email: string
   onVerified: () => void
   onBack: () => void
@@ -11,14 +11,20 @@ interface OtpFormProps {
   onPrivacy: () => void
 }
 
-export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy }: OtpFormProps) {
+export default function ResetOtpForm({
+  email,
+  onVerified,
+  onBack,
+  onTerms,
+  onPrivacy,
+}: ResetOtpFormProps) {
   const [otp, setOtp] = useState(['', '', '', ''])
   const [timer, setTimer] = useState(30)
   const [canResend, setCanResend] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-  const { mutate: verifyOtp, isPending } = useVerifyOtp()
-  const { mutate: resendOtp, isPending: isResending } = useResendOtp()
+  const { mutate: verifyResetOtp, isPending } = useVerifyResetOtp()
+  const { mutate: resendResetOtp, isPending: isResending } = useResendResetOtp()
 
   useEffect(() => {
     if (timer === 0) {
@@ -32,7 +38,7 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
   }, [timer])
 
   const handleResend = () => {
-    resendOtp(
+    resendResetOtp(
       { email },
       {
         onSuccess: () => {
@@ -63,7 +69,7 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
     if (newOtp.every((digit) => digit !== '')) {
       const otpString = newOtp.join('')
       setTimeout(() => {
-        verifyOtp(
+        verifyResetOtp(
           { email, otp: otpString },
           {
             onSuccess: () => onVerified(),
@@ -78,7 +84,10 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
     }
   }
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus()
     }
@@ -89,7 +98,7 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
   return (
     <div className="flex flex-col items-center px-2">
       <h2
-        className="mb-8 text-center text-xl font-normal leading-snug"
+        className="mb-8 text-center text-xl leading-snug font-normal"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
         Enter the code we just sent
@@ -101,7 +110,9 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => { inputRefs.current[index] = el }}
+            ref={(el) => {
+              inputRefs.current[index] = el
+            }}
             type="text"
             inputMode="numeric"
             maxLength={1}
@@ -125,7 +136,7 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
             disabled={isResending}
             className="cursor-pointer text-purple-700 underline disabled:opacity-50"
           >
-            {isResending ? 'Sending...' : 'Resend OTP'}
+            {isResending ? 'Sending...' : 'Resend code'}
           </button>
         </p>
       ) : (
@@ -143,13 +154,17 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
         className="w-full border border-gray-300 py-3.5 text-sm tracking-wide text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
-        Back to Sign Up
+        Back to Login
       </button>
 
       <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">Terms of service</span>
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
+          Terms of service
+        </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">Privacy policy</span>
+        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
+          Privacy policy
+        </span>
       </div>
     </div>
   )

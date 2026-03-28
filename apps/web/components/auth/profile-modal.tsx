@@ -10,6 +10,9 @@ import {
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import EditProfileForm from '@/components/auth/edit-profile-form'
+import { useLogout } from '@/hooks/use-auth'
+import { useRouter } from 'next/navigation'
+import LogoutConfirmDialog from '@/components/auth/logout-confirm-dialog'
 
 type OpenSection = 'address' | 'orders' | 'card' | null
 
@@ -37,6 +40,10 @@ export default function ProfileModal({ trigger }: ProfileModalProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [isEditingOpen, setIsEditingOpen] = useState(false)
 
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false)
+  const { mutate: logout, isPending: isLoggingOut } = useLogout()
+  const router = useRouter()
+
   const toggleSection = (section: OpenSection) => {
     setOpenSection((prev) => (prev === section ? null : section))
   }
@@ -49,6 +56,16 @@ export default function ProfileModal({ trigger }: ProfileModalProps) {
   const handleEditOpen = () => {
     setIsPopoverOpen(false) // close popover first
     setIsEditingOpen(true) // then open dialog
+  }
+
+  const handleLogoutConfirm = () => {
+    logout(undefined, {
+      onSuccess: () => {
+        setIsLogoutOpen(false)
+        setIsPopoverOpen(false)
+        router.push('/')
+      },
+    })
   }
 
   return (
@@ -193,17 +210,36 @@ export default function ProfileModal({ trigger }: ProfileModalProps) {
               <SquarePen size={15} strokeWidth={1.5} />
               Edit profile
             </Button>
+
+            <Button
+              variant="link"
+              onClick={() => {
+                setIsPopoverOpen(false)
+                setIsLogoutOpen(true)
+              }}
+              className="mt-2 text-base text-red-500"
+            >
+              Log Out
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
 
       {/* edit profile dialog */}
       <Dialog open={isEditingOpen} onOpenChange={setIsEditingOpen}>
-        <DialogContent className="w-full max-w-sm rounded-none p-8 px-6 pb-4 shadow-md bg-white">
+        <DialogContent className="w-full max-w-sm rounded-none bg-white p-8 px-6 pb-4 shadow-md">
           <DialogTitle className="sr-only">Edit Profile</DialogTitle>
           <EditProfileForm onBack={() => setIsEditingOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* logout confirm dialog */}
+      <LogoutConfirmDialog
+        isOpen={isLogoutOpen}
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setIsLogoutOpen(false)}
+        isPending={isLoggingOut}
+      />
     </>
   )
 }

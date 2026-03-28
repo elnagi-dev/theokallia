@@ -13,11 +13,15 @@ import { Eye, EyeOff } from 'lucide-react'
 interface SignUpFormProps {
   onSwitchToLogin: () => void
   onSwitchToOtp: (email: string) => void
+  onTerms: () => void
+  onPrivacy: () => void
 }
 
 export default function SignUpForm({
   onSwitchToLogin,
   onSwitchToOtp,
+  onTerms,
+  onPrivacy,
 }: SignUpFormProps) {
   const { mutate: register, isPending } = useRegister()
   const [showPassword, setShowPassword] = useState(false)
@@ -213,11 +217,11 @@ export default function SignUpForm({
       </p>
 
       <div className="mt-6 flex justify-center gap-3 text-xs text-gray-400">
-        <span className="cursor-pointer hover:text-gray-600">
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
           Terms of service
         </span>
         <span>|</span>
-        <span className="cursor-pointer hover:text-gray-600">
+        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
           Privacy policy
         </span>
       </div>
