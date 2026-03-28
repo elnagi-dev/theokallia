@@ -7,7 +7,7 @@ export class MailService {
   constructor(
     // Inject the BullMQ mail queue
     @InjectQueue('mail') private readonly mailQueue: Queue,
-  ) {}
+  ) { }
 
   // Push an OTP email job to the queue
   // BullMQ worker picks it up in the background and sends the email
@@ -23,6 +23,19 @@ export class MailService {
           type: 'exponential',
           delay: 5000,
         },
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    )
+  }
+
+  async sendPasswordResetOtp(email: string, otp: string): Promise<void> {
+    await this.mailQueue.add(
+      'send-reset-otp',
+      { email, otp },
+      {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
         removeOnComplete: true,
         removeOnFail: true,
       },

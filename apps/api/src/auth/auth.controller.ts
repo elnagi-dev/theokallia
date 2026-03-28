@@ -13,6 +13,9 @@ import { RegisterDto } from './dto/register.dto'
 import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { LoginDto } from './dto/login.dto'
 import { ResendOtpDto } from './dto/resend-otp.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
 
 @Controller('auth')
 export class AuthController {
@@ -120,5 +123,26 @@ export class AuthController {
     res.clearCookie('refresh_token')
 
     return { message: 'Logged out successfully' }
+  }
+
+  // POST /auth/forgot-password
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto)
+  }
+
+  // POST /auth/verify-reset-otp
+  @Post('verify-reset-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyResetOtp(@Body() dto: VerifyResetOtpDto) {
+    return this.authService.verifyResetOtp(dto)
+  }
+
+  // POST /auth/reset-password
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto)
   }
 }

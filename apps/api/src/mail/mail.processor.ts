@@ -34,6 +34,9 @@ export class MailProcessor extends WorkerHost {
       case 'send-otp':
         await this.handleSendOtp(job as Job<OtpJobData>)
         break
+      case 'send-reset-otp':
+        await this.handleSendResetOtp(job as Job<OtpJobData>)
+        break
       default:
         throw new Error(`Unknown job name: ${job.name}`)
     }
@@ -55,6 +58,23 @@ export class MailProcessor extends WorkerHost {
           <p>If you did not request this, please ignore this email.</p>
         </div>
       `,
+    })
+  }
+
+  private async handleSendResetOtp(job: Job<OtpJobData>): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.config.get<string>('MAIL_FROM'),
+      to: job.data.email,
+      subject: 'Reset your Theokallia password',
+      html: `
+      <div style="font-family: serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="letter-spacing: 0.2em;">THEOKALLIA</h2>
+        <p>You requested a password reset. Your code is:</p>
+        <h1 style="letter-spacing: 0.5em; color: #7E22CE;">${job.data.otp}</h1>
+        <p>This code expires in 5 minutes.</p>
+        <p>If you did not request this, you can safely ignore this email.</p>
+      </div>
+    `,
     })
   }
 }

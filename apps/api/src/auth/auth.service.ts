@@ -15,7 +15,10 @@ import { RegisterDto } from './dto/register.dto'
 import { VerifyOtpDto } from './dto/verify-otp.dto'
 import { LoginDto } from './dto/login.dto'
 import { ResendOtpDto } from './dto/resend-otp.dto'
-import type { AuthUser } from '@theokallia/types'
+import { ForgotPasswordDto } from './dto/forgot-password.dto'
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto'
+import { ResetPasswordDto } from './dto/reset-password.dto'
+import type { AuthUser } from '../types/user'
 
 @Injectable()
 export class AuthService {
@@ -286,5 +289,72 @@ export class AuthService {
         }
 
         return { message: 'Logged out' }
+    }
+
+    // Forgot Password
+    async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
+        const user = await this.prisma.client.user.findUnique({
+            where: { email: dto.email },
+        })
+
+        // Don't reveal whether email exists — always return the same message
+        if (!user) {
+            return { message: 'A reset code has been sent to your mail' }
+        }
+
+        const otp = this.generateOtp()
+        await this.redis.set(`reset:${dto.email}`, otp, 300)
+
+        void this.mail.sendPasswordResetOtp(dto.email, otp)
+
+        return { message: 'If that email exists, a reset code has been sent' }
+    }
+
+    // Verify Reset OTP
+    async verifyResetOtp(dto: VerifyResetOtpDto): Promise<{ message: string }> {
+        const storedOtp = await this.redis.get(`reset:${dto.email}`)
+
+        if (!storedOtp || storedOtp !== dto.otp) {
+            throw new UnauthorizedException('Invalid or expired code')
+        }
+
+        await this.redis.del(`reset:${dto.email}`)
+
+        // Grant a 10-minute window to set a new password
+        await this.redis.set(`reset-grant:${dto.email}`, '1', 600)
+
+        return { message: 'Code verified. You may now reset your password.' }
+    }
+
+    // Reset Password
+    async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
+        const grant = await this.redis.get(`reset-grant:${dto.email}`)
+
+        if (!grant) {
+            throw new UnauthorizedException('Reset session expired. Please start again.')
+        }
+
+        const user = await this.prisma.client.user.findUnique({
+            where: { email: dto.email },
+        })
+
+        if (!user) {
+            throw new NotFoundException('User not found')
+        }
+
+        const hashed = await bcrypt.hash(dto.password, 10)
+
+        await this.prisma.client.user.update({
+            where: { email: dto.email },
+            data: { password: hashed },
+        })
+
+        await this.redis.del(`reset-grant:${dto.email}`)
+
+        await this.prisma.client.refreshToken.deleteMany({
+            where: { userId: user.id },
+        })
+
+        return { message: 'Password reset successfully. Please sign in.' }
     }
 }
