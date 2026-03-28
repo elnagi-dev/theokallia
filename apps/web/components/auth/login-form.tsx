@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { signInSchema, type SignInFormData } from '@/lib/validations/auth'
 import { useLogin } from '@/hooks/use-auth'
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface LoginFormProps {
   onSwitchToSignUp: () => void
@@ -20,10 +23,13 @@ export default function LoginForm({
 }: LoginFormProps) {
   const { mutate: login, isPending } = useLogin()
   const router = useRouter()
+  const { setRedirectTo, redirectTo } = useAuthStore()
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -35,10 +41,13 @@ export default function LoginForm({
       {
         onSuccess: () => {
           onSuccess()
-          router.push('/shop')
+          router.push(redirectTo ?? '/shop')
+          setRedirectTo(null)
         },
         onError: (error) => {
-          console.error(error.message)
+          setError('root', {
+            message: error.message ?? 'Invalid email or password',
+          })
         },
       }
     )
@@ -78,13 +87,26 @@ export default function LoginForm({
           >
             Password
           </Label>
-          <Input
-            id="login-password"
-            type="password"
-            placeholder="••••••••••••••••••"
-            className="rounded-none border-gray-300"
-            {...register('password')}
-          />
+          <div className="relative">
+            <Input
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter your password"
+              className="rounded-none border-gray-300 pr-10"
+              {...register('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? (
+                <EyeOff size={16} strokeWidth={1.5} />
+              ) : (
+                <Eye size={16} strokeWidth={1.5} />
+              )}
+            </button>
+          </div>
           {errors.password && (
             <p className="text-xs text-red-500">{errors.password.message}</p>
           )}
@@ -95,6 +117,10 @@ export default function LoginForm({
             </span>
           </p>
         </div>
+
+        {errors.root && (
+          <p className="text-xs text-red-500">{errors.root.message}</p>
+        )}
 
         <Button
           type="submit"

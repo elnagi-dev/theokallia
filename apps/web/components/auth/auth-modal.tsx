@@ -18,23 +18,14 @@ interface AuthModalProps {
   isOpen: boolean
   initialView: 'login' | 'sign-up'
   onClose: () => void
-  onSuccess: () => void
 }
 
-export default function AuthModal({
-  isOpen,
-  initialView,
-  onClose,
-  onSuccess,
-}: AuthModalProps) {
+export default function AuthModal({ isOpen, initialView, onClose }: AuthModalProps) {
   const [view, setView] = useState<AuthView>(initialView)
-  const [flow, setFlow] = useState<'login' | 'sign-up'>(initialView)
   const [email, setEmail] = useState<string>('')
 
-  // Update view and flow when initialView changes
   useEffect(() => {
     setView(initialView)
-    setFlow(initialView)
   }, [initialView])
 
   const handleOpenChange = (open: boolean) => {
@@ -42,16 +33,11 @@ export default function AuthModal({
       onClose()
     } else {
       setView(initialView)
-      setFlow(initialView)
       setEmail('')
     }
   }
 
-  const handleSwitchToOtp = (
-    currentFlow: 'login' | 'sign-up',
-    userEmail: string
-  ) => {
-    setFlow(currentFlow)
+  const handleSwitchToOtp = (userEmail: string) => {
     setEmail(userEmail)
     setView('otp')
   }
@@ -75,38 +61,27 @@ export default function AuthModal({
         {view === 'sign-up' && (
           <SignUpForm
             onSwitchToLogin={() => setView('login')}
-            onSwitchToOtp={(userEmail) =>
-              handleSwitchToOtp('sign-up', userEmail)
-            }
+            onSwitchToOtp={handleSwitchToOtp}
           />
         )}
 
         {view === 'login' && (
           <LoginForm
             onSwitchToSignUp={() => setView('sign-up')}
-            onSuccess={() => {
-              onSuccess()
-              onClose()
-            }}
+            onSuccess={onClose}
           />
         )}
 
         {view === 'otp' && (
           <OtpForm
             email={email}
-            flow={flow}
             onVerified={() => setView('verified')}
-            onBack={() => setView(flow)}
+            onBack={() => setView('sign-up')}
           />
         )}
 
         {view === 'verified' && (
-          <EmailVerified
-            onContinue={() => {
-              onSuccess()
-              onClose()
-            }}
-          />
+          <EmailVerified onContinue={onClose} />
         )}
       </DialogContent>
     </Dialog>

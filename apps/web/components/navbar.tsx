@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
 import { Heart, ShoppingBag, User } from 'lucide-react'
 import ProfileModal from '@/components/auth/profile-modal'
+import { useAuthStore } from '@/lib/stores/auth-store'
 
 const links = [
   { name: 'Home', href: '/' },
@@ -19,11 +20,11 @@ const links = [
 interface NavbarProps {
   onOpenLogin: () => void
   onOpenSignUp: () => void
-  isLoggedIn: boolean
 }
 
-const Navbar = ({ onOpenLogin, onOpenSignUp, isLoggedIn }: NavbarProps) => {
+const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
   const pathname = usePathname()
+  const { isAuthenticated, isLoading } = useAuthStore()
 
   return (
     <nav className="relative container mx-auto flex items-center justify-between px-20 py-4">
@@ -57,23 +58,26 @@ const Navbar = ({ onOpenLogin, onOpenSignUp, isLoggedIn }: NavbarProps) => {
 
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4">
-          {isLoggedIn ? (
-            <ProfileModal
-              trigger={
-                <User
-                  size={20}
-                  strokeWidth={1.5}
-                  className="cursor-pointer text-foreground"
-                />
-              }
-            />
-          ) : (
-            <>
-              <Button variant="outline" onClick={onOpenLogin}>
-                Log In
-              </Button>
-              <Button onClick={onOpenSignUp}>Sign Up</Button>
-            </>
+          {/* Render nothing while session check is in flight — prevents flash */}
+          {!isLoading && (
+            isAuthenticated ? (
+              <ProfileModal
+                trigger={
+                  <User
+                    size={20}
+                    strokeWidth={1.5}
+                    className="cursor-pointer text-foreground"
+                  />
+                }
+              />
+            ) : (
+              <>
+                <Button variant="outline" onClick={onOpenLogin}>
+                  Log In
+                </Button>
+                <Button onClick={onOpenSignUp}>Sign Up</Button>
+              </>
+            )
           )}
         </div>
 
@@ -81,9 +85,7 @@ const Navbar = ({ onOpenLogin, onOpenSignUp, isLoggedIn }: NavbarProps) => {
           <Heart size={20} strokeWidth={1.5} />
           <Link
             href="/cart"
-            className={
-              pathname === '/cart' ? 'text-secondary' : 'text-foreground'
-            }
+            className={pathname === '/cart' ? 'text-secondary' : 'text-foreground'}
           >
             <ShoppingBag size={20} strokeWidth={1.5} />
           </Link>

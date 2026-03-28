@@ -5,6 +5,9 @@ import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import BackToTop from '@/components/back-to-top'
 import AuthModal from '@/components/auth/auth-modal'
+import AuthProvider from '@/lib/providers/auth-provider'
+import { usePathname } from 'next/navigation'
+import { useAuthStore } from '@/lib/stores/auth-store'
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -13,9 +16,11 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalView, setModalView] = useState<'login' | 'sign-up'>('login')
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { setRedirectTo } = useAuthStore()
+  const pathname = usePathname()
 
   const openLogin = () => {
+    setRedirectTo(pathname)
     setModalView('login')
     setIsModalOpen(true)
   }
@@ -26,12 +31,8 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <>
-      <Navbar
-        onOpenLogin={openLogin}
-        onOpenSignUp={openSignUp}
-        isLoggedIn={isLoggedIn}
-      />
+    <AuthProvider>
+      <Navbar onOpenLogin={openLogin} onOpenSignUp={openSignUp} />
       <main className="flex-1">{children}</main>
       <BackToTop />
       <Footer />
@@ -39,8 +40,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
         isOpen={isModalOpen}
         initialView={modalView}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={() => setIsLoggedIn(true)}
       />
-    </>
+    </AuthProvider>
   )
 }

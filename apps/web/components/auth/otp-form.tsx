@@ -7,15 +7,9 @@ interface OtpFormProps {
   email: string
   onVerified: () => void
   onBack: () => void
-  flow: 'login' | 'sign-up'
 }
 
-export default function OtpForm({
-  email,
-  onVerified,
-  onBack,
-  flow,
-}: OtpFormProps) {
+export default function OtpForm({ email, onVerified, onBack }: OtpFormProps) {
   const [otp, setOtp] = useState(['', '', '', ''])
   const [timer, setTimer] = useState(30)
   const [canResend, setCanResend] = useState(false)
@@ -24,7 +18,6 @@ export default function OtpForm({
   const { mutate: verifyOtp, isPending } = useVerifyOtp()
   const { mutate: resendOtp, isPending: isResending } = useResendOtp()
 
-  // countdown timer
   useEffect(() => {
     if (timer === 0) {
       setCanResend(true)
@@ -60,20 +53,18 @@ export default function OtpForm({
     newOtp[index] = value.slice(-1)
     setOtp(newOtp)
     setError(null)
+
     if (value && index < 3) {
       inputRefs.current[index + 1]?.focus()
     }
 
-    // auto-submit when all 4 digits filled
     if (newOtp.every((digit) => digit !== '')) {
       const otpString = newOtp.join('')
       setTimeout(() => {
         verifyOtp(
           { email, otp: otpString },
           {
-            onSuccess: () => {
-              onVerified()
-            },
+            onSuccess: () => onVerified(),
             onError: (err) => {
               setError(err.message)
               setOtp(['', '', '', ''])
@@ -85,20 +76,18 @@ export default function OtpForm({
     }
   }
 
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus()
     }
   }
 
   const formattedTime = `0:${timer.toString().padStart(2, '0')}`
+
   return (
     <div className="flex flex-col items-center px-2">
       <h2
-        className="mb-8 text-center text-xl leading-snug font-normal"
+        className="mb-8 text-center text-xl font-normal leading-snug"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
         Enter the code we just sent
@@ -106,14 +95,11 @@ export default function OtpForm({
         to your Email
       </h2>
 
-      {/* OTP boxes */}
       <div className="mb-6 flex gap-3">
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => {
-              inputRefs.current[index] = el
-            }}
+            ref={(el) => { inputRefs.current[index] = el }}
             type="text"
             inputMode="numeric"
             maxLength={1}
@@ -127,10 +113,8 @@ export default function OtpForm({
         ))}
       </div>
 
-      {/* error message */}
       {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
-      {/* timer or resend */}
       {canResend ? (
         <p className="mb-6 text-sm text-gray-500">
           Didn&apos;t receive an email?{' '}
@@ -151,24 +135,19 @@ export default function OtpForm({
         </p>
       )}
 
-      {/* back button */}
       <button
         onClick={onBack}
         disabled={isPending}
         className="w-full border border-gray-300 py-3.5 text-sm tracking-wide text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
-        {flow === 'login' ? 'Back to Sign In' : 'Back to Sign Up'}
+        Back to Sign Up
       </button>
 
       <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span className="cursor-pointer hover:text-gray-600">
-          Terms of service
-        </span>
+        <span className="cursor-pointer hover:text-gray-600">Terms of service</span>
         <span>|</span>
-        <span className="cursor-pointer hover:text-gray-600">
-          Privacy policy
-        </span>
+        <span className="cursor-pointer hover:text-gray-600">Privacy policy</span>
       </div>
     </div>
   )

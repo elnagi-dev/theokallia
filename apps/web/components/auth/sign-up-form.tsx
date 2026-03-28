@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth'
 import { useRegister } from '@/hooks/use-auth'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void
@@ -18,6 +20,8 @@ export default function SignUpForm({
   onSwitchToOtp,
 }: SignUpFormProps) {
   const { mutate: register, isPending } = useRegister()
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const {
     register: field,
@@ -115,13 +119,26 @@ export default function SignUpForm({
           >
             Password
           </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••••••••••••"
-            className="rounded-none border-gray-300"
-            {...field('password')}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter your password"
+              className="rounded-none border-gray-300 pr-10"
+              {...field('password')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? (
+                <EyeOff size={16} strokeWidth={1.5} />
+              ) : (
+                <Eye size={16} strokeWidth={1.5} />
+              )}
+            </button>
+          </div>
           {errors.password && (
             <p className="text-xs text-red-500">{errors.password.message}</p>
           )}
@@ -134,13 +151,26 @@ export default function SignUpForm({
           >
             Confirm Password
           </Label>
-          <Input
-            id="confirm-password"
-            type="password"
-            placeholder="••••••••••••••••••"
-            className="rounded-none border-gray-300"
-            {...field('confirmPassword')}
-          />
+          <div className="relative">
+            <Input
+              id="confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="Confirm your password"
+              className="rounded-none border-gray-300 pr-10"
+              {...field('confirmPassword')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? (
+                <EyeOff size={16} strokeWidth={1.5} />
+              ) : (
+                <Eye size={16} strokeWidth={1.5} />
+              )}
+            </button>
+          </div>
           {errors.confirmPassword && (
             <p className="text-xs text-red-500">
               {errors.confirmPassword.message}
