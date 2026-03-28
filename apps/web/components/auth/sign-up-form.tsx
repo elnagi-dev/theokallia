@@ -1,16 +1,51 @@
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth'
+import { useRegister } from '@/hooks/use-auth'
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void
-  onSwitchToOtp: () => void
+  onSwitchToOtp: (email: string) => void
 }
 
 export default function SignUpForm({
   onSwitchToLogin,
   onSwitchToOtp,
 }: SignUpFormProps) {
+  const { mutate: register, isPending } = useRegister()
+
+  const {
+    register: field,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+  })
+
+  function onSubmit(data: SignUpFormData) {
+    register(
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          onSwitchToOtp(data.email)
+        },
+        onError: (error) => {
+          console.error(error.message)
+        },
+      }
+    )
+  }
+
   return (
     <div className="flex flex-col px-2">
       <h2
@@ -20,7 +55,7 @@ export default function SignUpForm({
         CREATE ACCOUNT
       </h2>
 
-      <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label
             htmlFor="first-name"
@@ -32,7 +67,11 @@ export default function SignUpForm({
             id="first-name"
             type="text"
             className="rounded-none border-gray-300"
+            {...field('firstName')}
           />
+          {errors.firstName && (
+            <p className="text-xs text-red-500">{errors.firstName.message}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -46,7 +85,11 @@ export default function SignUpForm({
             id="last-name"
             type="text"
             className="rounded-none border-gray-300"
+            {...field('lastName')}
           />
+          {errors.lastName && (
+            <p className="text-xs text-red-500">{errors.lastName.message}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -58,7 +101,11 @@ export default function SignUpForm({
             type="email"
             placeholder="marcusexample@gmail.com"
             className="rounded-none border-gray-300"
+            {...field('email')}
           />
+          {errors.email && (
+            <p className="text-xs text-red-500">{errors.email.message}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -73,7 +120,11 @@ export default function SignUpForm({
             type="password"
             placeholder="••••••••••••••••••"
             className="rounded-none border-gray-300"
+            {...field('password')}
           />
+          {errors.password && (
+            <p className="text-xs text-red-500">{errors.password.message}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -88,7 +139,13 @@ export default function SignUpForm({
             type="password"
             placeholder="••••••••••••••••••"
             className="rounded-none border-gray-300"
+            {...field('confirmPassword')}
           />
+          {errors.confirmPassword && (
+            <p className="text-xs text-red-500">
+              {errors.confirmPassword.message}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -107,12 +164,13 @@ export default function SignUpForm({
         </div>
 
         <Button
-          onClick={onSwitchToOtp}
+          type="submit"
+          disabled={isPending}
           className="mt-1 w-full rounded-none bg-purple-700 py-5 text-sm tracking-wide text-white hover:bg-purple-800"
         >
-          Create Account
+          {isPending ? 'Creating Account...' : 'Create Account'}
         </Button>
-      </div>
+      </form>
 
       <p className="mt-4 text-center text-xs text-gray-500">
         Already have an account?{' '}

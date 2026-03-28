@@ -5,7 +5,8 @@ export interface Review {
   rating: number
   comment: string
   user: {
-    name: string
+    firstName: string
+    lastName: string
   }
   createdAt: string
 }

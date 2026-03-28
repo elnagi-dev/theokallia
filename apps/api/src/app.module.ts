@@ -1,9 +1,12 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import * as Joi from 'joi';
-import { PrismaModule } from './prisma/prisma.module';
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { BullModule } from '@nestjs/bullmq'
+import { AuthModule } from './auth/auth.module'
+import { UsersModule } from './users/users.module'
+import { PrismaModule } from './prisma/prisma.module'
+import { RedisModule } from './redis/redis.module'
+import { MailModule } from './mail/mail.module'
+import * as Joi from 'joi'
 
 @Module({
   imports: [
@@ -14,15 +17,30 @@ import { PrismaModule } from './prisma/prisma.module';
         NODE_ENV: Joi.string().required(),
         PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
-        SUPABASE_URL: Joi.string().required(),
-        SUPABASE_ANON_KEY: Joi.string().required(),
-        SUPABASE_JWT_SECRET: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
+        JWT_ACCESS_SECRET: Joi.string().required(),
+        JWT_REFRESH_SECRET: Joi.string().required(),
+        JWT_ACCESS_EXPIRES_IN: Joi.string().required(),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().required(),
+        REDIS_URL: Joi.string().required(),
+        MAIL_HOST: Joi.string().required(),
+        MAIL_PORT: Joi.number().required(),
+        MAIL_USER: Joi.string().required(),
+        MAIL_PASS: Joi.string().required(),
+        MAIL_FROM: Joi.string().required(),
       }),
     }),
+    // Register BullMQ globally — all queues use this Redis connection
+    BullModule.forRoot({
+      connection: {
+        url: process.env.REDIS_URL,
+      },
+    }),
+    PrismaModule,
+    RedisModule,
+    MailModule,
     AuthModule,
     UsersModule,
-    PrismaModule
   ],
 })
-export class AppModule { }
+export class AppModule {}

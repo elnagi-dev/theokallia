@@ -6,43 +6,39 @@ import { UpdateUserDto } from './dto/update-user.dto'
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Find a user by their Supabase ID
-  // Called after JWT verification to get the full user record from public.User
-  async findBySupabaseId(supabaseId: string) {
+  // Find a user by their database ID
+  // Called after JWT verification to get the full user record
+  async findById(userId: string) {
     const user = await this.prisma.client.user.findUnique({
-      where: { supabaseId },
+      where: { id: userId },
     })
 
     if (!user) {
       throw new NotFoundException('User not found')
     }
 
-    return user
+    // Never return the password hash to the client
+    const { password: _password, ...userWithoutPassword } = user
+    return userWithoutPassword
   }
 
-  // Create a user record in public.User on first login
-  // Called from POST /users/sync after Supabase OTP verification
-  async syncUser(supabaseId: string, email: string) {
-    return this.prisma.client.user.upsert({
-      where: { supabaseId },
-      // If user already exists, do nothing
-      update: {},
-      // If user doesn't exist, create them with default customer role
-      create: {
-        supabaseId,
-        email,
-        name: '',
-        role: 'customer',
-      },
+  // Find a user by email — used internally by AuthService during login
+  async findByEmail(email: string) {
+    return this.prisma.client.user.findUnique({
+      where: { email },
     })
   }
 
   // Update the current user's profile
   // Only fields provided in the DTO will be updated
-  async updateMe(supabaseId: string, dto: UpdateUserDto) {
-    return this.prisma.client.user.update({
-      where: { supabaseId },
+  async updateMe(userId: string, dto: UpdateUserDto) {
+    const user = await this.prisma.client.user.update({
+      where: { id: userId },
       data: dto,
     })
+
+    // Never return the password hash to the client
+    const { password: _password, ...userWithoutPassword } = user
+    return userWithoutPassword
   }
 }

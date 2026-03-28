@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,22 +21,38 @@ interface AuthModalProps {
   onSuccess: () => void
 }
 
-export default function AuthModal({isOpen, initialView, onClose, onSuccess}: AuthModalProps) {
+export default function AuthModal({
+  isOpen,
+  initialView,
+  onClose,
+  onSuccess,
+}: AuthModalProps) {
   const [view, setView] = useState<AuthView>(initialView)
   const [flow, setFlow] = useState<'login' | 'sign-up'>(initialView)
+  const [email, setEmail] = useState<string>('')
 
-  // sync view when modal is reopened with a different initialView
+  // Update view and flow when initialView changes
+  useEffect(() => {
+    setView(initialView)
+    setFlow(initialView)
+  }, [initialView])
+
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose()
     } else {
       setView(initialView)
       setFlow(initialView)
+      setEmail('')
     }
   }
 
-  const handleSwitchToOtp = (currentFlow: 'login' | 'sign-up') => {
-    setFlow(currentFlow) // Tracks which flow initiated OTP
+  const handleSwitchToOtp = (
+    currentFlow: 'login' | 'sign-up',
+    userEmail: string
+  ) => {
+    setFlow(currentFlow)
+    setEmail(userEmail)
     setView('otp')
   }
 
@@ -55,32 +71,43 @@ export default function AuthModal({isOpen, initialView, onClose, onSuccess}: Aut
           {view === 'otp' && 'Enter the verification code sent to your email'}
           {view === 'verified' && 'Your email has been successfully verified'}
         </DialogDescription>
+
         {view === 'sign-up' && (
           <SignUpForm
             onSwitchToLogin={() => setView('login')}
-            onSwitchToOtp={() => handleSwitchToOtp('sign-up')}
+            onSwitchToOtp={(userEmail) =>
+              handleSwitchToOtp('sign-up', userEmail)
+            }
           />
         )}
 
         {view === 'login' && (
           <LoginForm
             onSwitchToSignUp={() => setView('sign-up')}
-            onSwitchToOtp={() => handleSwitchToOtp('login')}
+            onSuccess={() => {
+              onSuccess()
+              onClose()
+            }}
           />
         )}
 
         {view === 'otp' && (
           <OtpForm
+            email={email}
             flow={flow}
             onVerified={() => setView('verified')}
             onBack={() => setView(flow)}
           />
         )}
 
-        {view === 'verified' && <EmailVerified onContinue={() => {
-          onSuccess()
-          onClose()
-        }} />}
+        {view === 'verified' && (
+          <EmailVerified
+            onContinue={() => {
+              onSuccess()
+              onClose()
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -1,8 +1,17 @@
+import { useRouter } from 'next/navigation'
+
 interface EmailVerifiedProps {
   onContinue: () => void
 }
 
 export default function EmailVerified({ onContinue }: EmailVerifiedProps) {
+
+  const router = useRouter()
+
+  const handleContinue = () => {
+    onContinue()
+    router.push('/shop')
+  }
   return (
     <div className="flex flex-col items-center px-2 py-4">
       {/* verified badge */}
@@ -47,7 +56,7 @@ export default function EmailVerified({ onContinue }: EmailVerifiedProps) {
       </p>
 
       <button
-        onClick={onContinue}
+        onClick={handleContinue}
         className="w-full bg-purple-700 py-3.5 text-sm tracking-wide text-white transition-colors hover:bg-purple-800"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >

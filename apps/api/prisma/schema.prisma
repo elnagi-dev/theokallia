@@ -6,18 +6,30 @@ datasource db {
   provider = "postgresql"
 }
 
-// Mirrors the Supabase auth.users table via supabaseId
-// Supabase owns authentication — this table owns app-specific user data
 model User {
-  id         String    @id @default(cuid())
-  supabaseId String    @unique // links to auth.users.id in Supabase
-  email      String    @unique
-  name       String
-  role       String    @default("customer") // 'customer' | 'admin'
-  orders     Order[]
-  reviews    Review[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id             String         @id @default(cuid())
+  firstName      String
+  lastName       String
+  email          String         @unique
+  password       String         // bcryptjs hash
+  role           String         @default("customer") // 'customer' | 'admin'
+  emailVerified  Boolean        @default(false)
+  orders         Order[]
+  reviews        Review[]
+  refreshTokens  RefreshToken[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+// Stores hashed refresh tokens for token rotation
+// Old token deleted and new one created on every refresh
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique // hashed refresh token
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Category {

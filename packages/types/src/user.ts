@@ -1,9 +1,12 @@
 export interface User {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   email: string
   role: 'customer' | 'admin'
-  supabaseId: string
+  emailVerified: boolean
   createdAt: string
   updatedAt: string
 }
+
+export type AuthUser = Omit<User, 'createdAt' | 'updatedAt'>
