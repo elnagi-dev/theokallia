@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto'
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // Find a user by their database ID
   // Called after JWT verification to get the full user record

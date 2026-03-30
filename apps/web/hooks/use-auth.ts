@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import type { AuthUser } from '@theokallia/types'
+import type { UpdateProfileInput } from '@/lib/validations/update-profile'
 
 // --- Types ---
 
@@ -109,6 +110,19 @@ export function useResetPassword() {
     mutationFn: async (data: { email: string; password: string }) => {
       const res = await api.post('/auth/reset-password', data)
       return res.data
+    },
+  })
+}
+
+export const useUpdateProfile = () => {
+  const { setUser } = useAuthStore()
+
+  return useMutation({
+    mutationFn: (data: UpdateProfileInput) =>
+      api.patch<AuthUser>('/users/me', data).then((res) => res.data),
+    onSuccess: (updatedUser) => {
+      // update zustand store — profile modal reflects changes immediately
+      setUser(updatedUser)
     },
   })
 }

@@ -4,9 +4,22 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
-  name?: string
+  firstName?: string
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  lastName?: string
 
   @IsOptional()
   @IsEmail()
   email?: string
+
+  @IsOptional()
+  @IsString()
+  phone?: string
+
+  @IsOptional()
+  @IsString()
+  address?: string
 }

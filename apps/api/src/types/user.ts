@@ -3,6 +3,8 @@ export interface User {
   firstName: string
   lastName: string
   email: string
+  phone?: string
+  address?: string
   role: 'customer' | 'admin'
   emailVerified: boolean
   createdAt: string

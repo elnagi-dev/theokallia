@@ -81,6 +81,8 @@ export class AuthService {
         email: string
         role: string
         emailVerified: boolean
+        phone?: string | null
+        address?: string | null
     }): AuthUser {
         return {
             id: user.id,
@@ -89,6 +91,8 @@ export class AuthService {
             email: user.email,
             role: user.role as 'customer' | 'admin',
             emailVerified: user.emailVerified,
+            phone: user.phone ?? undefined,
+            address: user.address ?? undefined,
         }
     }
 

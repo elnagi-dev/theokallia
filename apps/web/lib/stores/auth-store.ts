@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type {AuthUser } from '@theokallia/types'
+import type { AuthUser } from '@theokallia/types'
 
 interface AuthState {
   // The currently logged-in user — null if not logged in

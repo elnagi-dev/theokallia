@@ -1,6 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Button } from '../ui/button'
+import Link from 'next/link'
 
 const HeroSection = () => {
   return (
@@ -30,7 +31,9 @@ const HeroSection = () => {
             crafted with passion and precision.
           </p>
 
-          <Button className="mt-4 px-8 py-6">Shop Now</Button>
+          <Button className="mt-4 px-8 py-6" asChild>
+            <Link href="/shop">Shop Now</Link>
+          </Button>
         </div>
       </div>
     </section>
