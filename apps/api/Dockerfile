@@ -14,6 +14,10 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 WORKDIR /app/apps/api
+
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 RUN pnpm prisma generate
 RUN pnpm nest build
 
