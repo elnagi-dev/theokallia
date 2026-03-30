@@ -11,13 +11,13 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
-  // Parse cookies (needed for Supabase httpOnly cookie sessions)
   app.use(cookieParser());
 
   // CORS — only allow frontend origins
   app.enableCors({
     origin: [
       'http://localhost:3000',
+      'https://theokallia.vercel.app',
       'https://theokallia.com',
       'https://admin.theokallia.com',
     ],
@@ -44,7 +44,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(3333);
+  await app.listen(process.env.PORT ?? 3333)
 }
 
 void bootstrap();
