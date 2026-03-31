@@ -18,9 +18,8 @@ WORKDIR /app/apps/api
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
-RUN pnpm prisma generate
-RUN pnpm nest build
+RUN pnpm build
 
 EXPOSE 3333
 
-CMD ["node", "/app/apps/api/dist/main"]
+CMD ["node", "/app/apps/api/dist/src/main"]
