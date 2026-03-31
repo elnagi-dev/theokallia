@@ -23,4 +23,4 @@ RUN pnpm nest build
 
 EXPOSE 3333
 
-CMD ["node", "dist/main"]
+CMD ["node", "/app/apps/api/dist/main"]
