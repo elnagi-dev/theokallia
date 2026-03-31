@@ -102,29 +102,35 @@ export class AuthService {
             where: { email: dto.email },
         })
 
-        if (existing) {
+        if (existing && existing.emailVerified) {
             throw new ConflictException('Email already in use')
+        }
+
+        // If unverified user exists in DB from old flow, delete them
+        if (existing && !existing.emailVerified) {
+            await this.prisma.client.user.delete({ where: { email: dto.email } })
         }
 
         const hashedPassword = await bcrypt.hash(dto.password, 10)
 
-        await this.prisma.client.$transaction(async (tx) => {
-            await tx.user.create({
-                data: {
-                    firstName: dto.firstName,
-                    lastName: dto.lastName,
-                    email: dto.email,
-                    password: hashedPassword,
-                    emailVerified: false,
-                    role: 'customer',
-                },
-            })
-        })
+        // Store registration data in Redis for OTP verification
+        await this.redis.set(
+            `pending-registration:${dto.email}`,
+            JSON.stringify({
+                firstName: dto.firstName,
+                lastName: dto.lastName,
+                email: dto.email,
+                password: hashedPassword,
+            }),
+            300, // 5 minutes — same TTL as OTP
+        )
 
         const otp = this.generateOtp()
         await this.redis.set(`otp:${dto.email}`, otp, 300)
 
-        void this.mail.sendOtp(dto.email, otp)
+        this.mail.sendOtp(dto.email, otp).catch((err) => {
+            console.error('Failed to queue OTP email:', err)
+        })
 
         return { message: 'Check your email for your verification code' }
     }
@@ -137,22 +143,37 @@ export class AuthService {
             throw new UnauthorizedException('Invalid or expired OTP')
         }
 
-        const user = await this.prisma.client.user.findUnique({
-            where: { email: dto.email },
-        })
+        // Get pending registration data from Redis
+        const pendingRegistration = await this.redis.get(`pending-registration:${dto.email}`)
 
-        if (!user) {
-            throw new NotFoundException('User not found')
+        if (!pendingRegistration) {
+            throw new UnauthorizedException('Registration session expired. Please register again.')
         }
 
-        await this.prisma.client.$transaction(async (tx) => {
-            await tx.user.update({
-                where: { email: dto.email },
-                data: { emailVerified: true },
+        const pending = JSON.parse(pendingRegistration) as {
+            firstName: string
+            lastName: string
+            email: string
+            password: string
+        }
+
+        // Create user in DB now that OTP is verified
+        const user = await this.prisma.client.$transaction(async (tx) => {
+            return tx.user.create({
+                data: {
+                    firstName: pending.firstName,
+                    lastName: pending.lastName,
+                    email: pending.email,
+                    password: pending.password,
+                    emailVerified: true,
+                    role: 'customer',
+                },
             })
         })
 
+        // Clean up Redis
         await this.redis.del(`otp:${dto.email}`)
+        await this.redis.del(`pending-registration:${dto.email}`)
 
         const accessToken = this.signAccessToken(user.id, user.email, user.role)
         const refreshToken = await this.createRefreshToken(user.id)
@@ -162,22 +183,20 @@ export class AuthService {
 
     // Resend OTP
     async resendOtp(dto: ResendOtpDto): Promise<{ message: string }> {
-        const user = await this.prisma.client.user.findUnique({
-            where: { email: dto.email },
-        })
+        const pendingRegistration = await this.redis.get(`pending-registration:${dto.email}`)
 
-        if (!user) {
-            throw new NotFoundException('User not found')
-        }
-
-        if (user.emailVerified) {
-            throw new ConflictException('Email is already verified')
+        if (!pendingRegistration) {
+            throw new NotFoundException('No pending registration found. Please register again.')
         }
 
         const otp = this.generateOtp()
         await this.redis.set(`otp:${dto.email}`, otp, 300)
+        // Reset pending TTL too
+        await this.redis.set(`pending-registration:${dto.email}`, pendingRegistration, 300)
 
-        void this.mail.sendOtp(dto.email, otp)
+        this.mail.sendOtp(dto.email, otp).catch((err) => {
+            console.error('Failed to queue OTP email:', err)
+        })
 
         return { message: 'A new verification code has been sent to your email' }
     }
@@ -309,7 +328,9 @@ export class AuthService {
         const otp = this.generateOtp()
         await this.redis.set(`reset:${dto.email}`, otp, 300)
 
-        void this.mail.sendPasswordResetOtp(dto.email, otp)
+        this.mail.sendOtp(dto.email, otp).catch((err) => {
+            console.error('Failed to queue OTP email:', err)
+        })
 
         return { message: 'If that email exists, a reset code has been sent' }
     }

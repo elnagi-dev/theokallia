@@ -1,6 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
 import { ConfigService } from '@nestjs/config'
+import { Logger } from '@nestjs/common'
 import * as nodemailer from 'nodemailer'
 
 // Job data shapes
@@ -14,6 +15,7 @@ interface OtpJobData {
 @Processor('mail')
 export class MailProcessor extends WorkerHost {
   private transporter: nodemailer.Transporter
+  private readonly logger = new Logger(MailProcessor.name)
 
   constructor(private config: ConfigService) {
     super()
@@ -30,15 +32,22 @@ export class MailProcessor extends WorkerHost {
 
   // Routes jobs to the correct handler based on job name
   async process(job: Job): Promise<void> {
-    switch (job.name) {
-      case 'send-otp':
-        await this.handleSendOtp(job as Job<OtpJobData>)
-        break
-      case 'send-reset-otp':
-        await this.handleSendResetOtp(job as Job<OtpJobData>)
-        break
-      default:
-        throw new Error(`Unknown job name: ${job.name}`)
+    this.logger.log(`Processing job: ${job.name}`)
+    try {
+      switch (job.name) {
+        case 'send-otp':
+          await this.handleSendOtp(job as Job<OtpJobData>)
+          break
+        case 'send-reset-otp':
+          await this.handleSendResetOtp(job as Job<OtpJobData>)
+          break
+        default:
+          throw new Error(`Unknown job name: ${job.name}`)
+      }
+      this.logger.log(`Job ${job.name} completed successfully`)
+    } catch (err) {
+      this.logger.error(`Job ${job.name} failed:`, err)
+      throw err
     }
   }
 

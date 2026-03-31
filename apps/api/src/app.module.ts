@@ -34,6 +34,7 @@ import * as Joi from 'joi'
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL,
+        tls: {},
       },
     }),
     PrismaModule,
@@ -43,4 +44,4 @@ import * as Joi from 'joi'
     UsersModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
