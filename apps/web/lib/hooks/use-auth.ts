@@ -113,16 +113,3 @@ export function useResetPassword() {
     },
   })
 }
-
-export const useUpdateProfile = () => {
-  const { setUser } = useAuthStore()
-
-  return useMutation({
-    mutationFn: (data: UpdateProfileInput) =>
-      api.patch<AuthUser>('/users/me', data).then((res) => res.data),
-    onSuccess: (updatedUser) => {
-      // update zustand store — profile modal reflects changes immediately
-      setUser(updatedUser)
-    },
-  })
-}

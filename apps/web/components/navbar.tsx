@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from './ui/button'
 import { Heart, ShoppingBag, User } from 'lucide-react'
-import ProfileModal from '@/components/auth/profile-modal'
+import ProfileModal from '@/components/profile/profile-modal'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
 const links = [

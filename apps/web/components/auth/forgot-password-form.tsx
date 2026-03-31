@@ -3,8 +3,11 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { forgotPasswordSchema, type ForgotPasswordInput } from '@/lib/validations/auth'
-import { useForgotPassword } from '@/hooks/use-auth'
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordInput,
+} from '@/lib/validations/auth'
+import { useForgotPassword } from '@/lib/hooks/use-auth'
 
 interface ForgotPasswordFormProps {
   onEmailSent: (email: string) => void
@@ -13,7 +16,12 @@ interface ForgotPasswordFormProps {
   onPrivacy: () => void
 }
 
-export default function ForgotPasswordForm({ onEmailSent, onBack, onTerms, onPrivacy }: ForgotPasswordFormProps) {
+export default function ForgotPasswordForm({
+  onEmailSent,
+  onBack,
+  onTerms,
+  onPrivacy,
+}: ForgotPasswordFormProps) {
   const [serverError, setServerError] = useState<string | null>(null)
   const { mutate: forgotPassword, isPending } = useForgotPassword()
 
@@ -36,7 +44,7 @@ export default function ForgotPasswordForm({ onEmailSent, onBack, onTerms, onPri
   return (
     <div className="flex flex-col items-center px-2">
       <h2
-        className="mb-2 text-center text-xl font-normal leading-snug"
+        className="mb-2 text-center text-xl leading-snug font-normal"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
         Forgot your password?
@@ -48,7 +56,10 @@ export default function ForgotPasswordForm({ onEmailSent, onBack, onTerms, onPri
         Enter your email and we&apos;ll send you a reset code.
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex w-full flex-col gap-4"
+      >
         <div className="flex flex-col gap-1">
           <label
             className="text-sm text-gray-600"
@@ -95,9 +106,16 @@ export default function ForgotPasswordForm({ onEmailSent, onBack, onTerms, onPri
       </form>
 
       <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">Terms of service</span>
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
+          Terms of service
+        </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">Privacy policy</span>
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
+          Privacy policy
+        </span>
       </div>
     </div>
   )

@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Eye, EyeOff } from 'lucide-react'
-import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth'
-import { useResetPassword } from '@/hooks/use-auth'
+import {
+  resetPasswordSchema,
+  type ResetPasswordInput,
+} from '@/lib/validations/auth'
+import { useResetPassword } from '@/lib/hooks/use-auth'
 
 interface ResetPasswordFormProps {
   email: string
@@ -17,7 +20,12 @@ interface ResetPasswordFormProps {
   onPrivacy: () => void
 }
 
-export default function ResetPasswordForm({ email, onSuccess, onTerms, onPrivacy }: ResetPasswordFormProps) {
+export default function ResetPasswordForm({
+  email,
+  onSuccess,
+  onTerms,
+  onPrivacy,
+}: ResetPasswordFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const { mutate: resetPassword, isPending } = useResetPassword()
@@ -47,13 +55,16 @@ export default function ResetPasswordForm({ email, onSuccess, onTerms, onPrivacy
 
   return (
     <div className="flex flex-col px-2">
-      <h2 className="mb-8 text-center font-cormorant-garamond text-3xl font-normal leading-snug">
+      <h2 className="mb-8 text-center font-cormorant-garamond text-3xl leading-snug font-normal">
         Create a New Password
       </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="new-password" className="text-sm font-normal text-gray-700">
+          <Label
+            htmlFor="new-password"
+            className="text-sm font-normal text-gray-700"
+          >
             New password
           </Label>
           <div className="relative">
@@ -83,7 +94,10 @@ export default function ResetPasswordForm({ email, onSuccess, onTerms, onPrivacy
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="confirm-password" className="text-sm font-normal text-gray-700">
+          <Label
+            htmlFor="confirm-password"
+            className="text-sm font-normal text-gray-700"
+          >
             Confirm New password
           </Label>
           <div className="relative">
@@ -108,7 +122,9 @@ export default function ResetPasswordForm({ email, onSuccess, onTerms, onPrivacy
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
+            <p className="text-xs text-red-500">
+              {errors.confirmPassword.message}
+            </p>
           )}
         </div>
 
@@ -126,9 +142,16 @@ export default function ResetPasswordForm({ email, onSuccess, onTerms, onPrivacy
       </form>
 
       <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">Terms of service</span>
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
+          Terms of service
+        </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">Privacy policy</span>
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
+          Privacy policy
+        </span>
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 import { ChevronUp } from 'lucide-react'
-import useBackToTop from '@/hooks/use-back-to-top'
+import useBackToTop from '@/lib/hooks/use-back-to-top'
 
 const BackToTop = () => {
   const { visible, scrollToTop } = useBackToTop()
@@ -8,8 +8,10 @@ const BackToTop = () => {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-8 right-8 z-50 bg-primary/90 hover:bg-primary/70 text-white p-3 transition-all duration-300 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+      className={`fixed right-8 bottom-8 z-50 bg-primary/90 p-3 text-white transition-all duration-300 hover:bg-primary/70 ${
+        visible
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none translate-y-4 opacity-0'
       }`}
     >
       <ChevronUp size={20} />

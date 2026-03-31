@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useVerifyResetOtp, useResendResetOtp } from '@/hooks/use-auth'
+import { useVerifyResetOtp, useResendResetOtp } from '@/lib/hooks/use-auth'
 
 interface ResetOtpFormProps {
   email: string
@@ -162,7 +162,10 @@ export default function ResetOtpForm({
           Terms of service
         </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
           Privacy policy
         </span>
       </div>

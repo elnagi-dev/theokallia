@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signInSchema, type SignInFormData } from '@/lib/validations/auth'
-import { useLogin } from '@/hooks/use-auth'
+import { useLogin } from '@/lib/hooks/use-auth'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { Eye, EyeOff } from 'lucide-react'
@@ -155,7 +155,10 @@ export default function LoginForm({
           Terms of service
         </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
           Privacy policy
         </span>
       </div>

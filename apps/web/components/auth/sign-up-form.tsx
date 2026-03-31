@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth'
-import { useRegister } from '@/hooks/use-auth'
+import { useRegister } from '@/lib/hooks/use-auth'
 import { Eye, EyeOff } from 'lucide-react'
 
 interface SignUpFormProps {
@@ -221,7 +221,10 @@ export default function SignUpForm({
           Terms of service
         </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
           Privacy policy
         </span>
       </div>

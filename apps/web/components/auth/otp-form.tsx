@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useVerifyOtp, useResendOtp } from '@/hooks/use-auth'
+import { useVerifyOtp, useResendOtp } from '@/lib/hooks/use-auth'
 
 interface OtpFormProps {
   email: string
@@ -11,7 +11,13 @@ interface OtpFormProps {
   onPrivacy: () => void
 }
 
-export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy }: OtpFormProps) {
+export default function OtpForm({
+  email,
+  onVerified,
+  onBack,
+  onTerms,
+  onPrivacy,
+}: OtpFormProps) {
   const [otp, setOtp] = useState(['', '', '', ''])
   const [timer, setTimer] = useState(30)
   const [canResend, setCanResend] = useState(false)
@@ -78,7 +84,10 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
     }
   }
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus()
     }
@@ -89,7 +98,7 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
   return (
     <div className="flex flex-col items-center px-2">
       <h2
-        className="mb-8 text-center text-xl font-normal leading-snug"
+        className="mb-8 text-center text-xl leading-snug font-normal"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
         Enter the code we just sent
@@ -101,7 +110,9 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => { inputRefs.current[index] = el }}
+            ref={(el) => {
+              inputRefs.current[index] = el
+            }}
             type="text"
             inputMode="numeric"
             maxLength={1}
@@ -147,9 +158,16 @@ export default function OtpForm({ email, onVerified, onBack, onTerms, onPrivacy 
       </button>
 
       <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">Terms of service</span>
+        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
+          Terms of service
+        </span>
         <span>|</span>
-        <span onClick={onPrivacy} className="cursor-pointer hover:text-gray-600">Privacy policy</span>
+        <span
+          onClick={onPrivacy}
+          className="cursor-pointer hover:text-gray-600"
+        >
+          Privacy policy
+        </span>
       </div>
     </div>
   )

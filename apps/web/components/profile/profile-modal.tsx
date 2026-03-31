@@ -14,10 +14,10 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import EditProfileForm from '@/components/auth/edit-profile-form'
-import { useLogout } from '@/hooks/use-auth'
+import EditProfileForm from '@/components/profile/edit-profile-form'
+import { useLogout } from '@/lib/hooks/use-auth'
 import { useRouter } from 'next/navigation'
-import LogoutConfirmDialog from '@/components/auth/logout-confirm-dialog'
+import LogoutConfirmDialog from '@/components/profile/logout-confirm-dialog'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
 type OpenSection = 'address' | 'orders' | null

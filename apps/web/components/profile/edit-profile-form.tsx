@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { updateProfileSchema, type UpdateProfileInput } from '@/lib/validations/update-profile'
-import { useUpdateProfile } from '@/hooks/use-auth'
+import {
+  updateProfileSchema,
+  type UpdateProfileInput,
+} from '@/lib/validations/update-profile'
+import { useUpdateProfile } from '@/lib/hooks/use-profile'
 import { useAuthStore } from '@/lib/stores/auth-store'
 
 interface EditProfileFormProps {
@@ -48,8 +51,13 @@ export default function EditProfileForm({ onBack }: EditProfileFormProps) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <Label className="text-sm font-normal text-gray-700">First Name</Label>
-          <Input {...register('firstName')} className="rounded-none border-gray-300" />
+          <Label className="text-sm font-normal text-gray-700">
+            First Name
+          </Label>
+          <Input
+            {...register('firstName')}
+            className="rounded-none border-gray-300"
+          />
           {errors.firstName && (
             <p className="text-xs text-red-500">{errors.firstName.message}</p>
           )}
@@ -57,7 +65,10 @@ export default function EditProfileForm({ onBack }: EditProfileFormProps) {
 
         <div className="flex flex-col gap-1.5">
           <Label className="text-sm font-normal text-gray-700">Last Name</Label>
-          <Input {...register('lastName')} className="rounded-none border-gray-300" />
+          <Input
+            {...register('lastName')}
+            className="rounded-none border-gray-300"
+          />
           {errors.lastName && (
             <p className="text-xs text-red-500">{errors.lastName.message}</p>
           )}
@@ -65,7 +76,11 @@ export default function EditProfileForm({ onBack }: EditProfileFormProps) {
 
         <div className="flex flex-col gap-1.5">
           <Label className="text-sm font-normal text-gray-700">Email</Label>
-          <Input {...register('email')} type="email" className="rounded-none border-gray-300" />
+          <Input
+            {...register('email')}
+            type="email"
+            className="rounded-none border-gray-300"
+          />
           {errors.email && (
             <p className="text-xs text-red-500">{errors.email.message}</p>
           )}
@@ -73,7 +88,11 @@ export default function EditProfileForm({ onBack }: EditProfileFormProps) {
 
         <div className="flex flex-col gap-1.5">
           <Label className="text-sm font-normal text-gray-700">Phone</Label>
-          <Input {...register('phone')} type="tel" className="rounded-none border-gray-300" />
+          <Input
+            {...register('phone')}
+            type="tel"
+            className="rounded-none border-gray-300"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">

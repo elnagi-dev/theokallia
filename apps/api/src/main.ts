@@ -1,17 +1,17 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
+import { NestFactory } from '@nestjs/core'
+import { ValidationPipe, VersioningType } from '@nestjs/common'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
+import { AppModule } from './app.module'
+import helmet from 'helmet'
+import cookieParser from 'cookie-parser'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule)
 
   // Security headers
-  app.use(helmet());
+  app.use(helmet())
 
-  app.use(cookieParser());
+  app.use(cookieParser())
 
   // CORS — only allow frontend origins
   app.enableCors({
@@ -21,8 +21,14 @@ async function bootstrap() {
       'https://theokallia.com',
       'https://admin.theokallia.com',
     ],
-    credentials: true, // required for httpOnly cookies to be sent cross-origin
-  });
+    credentials: true,
+  })
+
+  // URI versioning — all routes prefixed with /v{n}/
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  })
 
   // Global validation — strips unknown fields, auto-transforms DTOs
   app.useGlobalPipes(
@@ -31,7 +37,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
     }),
-  );
+  )
 
   // Swagger
   const config = new DocumentBuilder()
@@ -39,12 +45,12 @@ async function bootstrap() {
     .setDescription('Theokallia jewellery API')
     .setVersion('1.0')
     .addBearerAuth()
-    .build();
+    .build()
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('docs', app, document)
 
   await app.listen(process.env.PORT ?? 3333)
 }
 
-void bootstrap();
+void bootstrap()
