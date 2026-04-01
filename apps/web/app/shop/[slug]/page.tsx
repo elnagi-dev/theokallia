@@ -74,7 +74,7 @@ export default function ProductPage() {
             id: parseInt(review.id),
             name: `${review.user.firstName} ${review.user.lastName}`,
             date: new Date(review.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',refactor: pass slug as prop to SimilarProducts instead of useParams
+              year: 'numeric',
               month: 'long',
               day: 'numeric',
             }),
