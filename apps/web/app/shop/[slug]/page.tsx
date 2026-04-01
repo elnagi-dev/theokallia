@@ -7,12 +7,18 @@ import ProductRatingSummary from '@/components/product/product-rating-summary'
 import ProductReviews from '@/components/product/product-reviews'
 import SimilarProducts from '@/components/product/similar-products'
 import { useProduct } from '@/lib/hooks/use-products'
+import { useReviews } from '@/lib/hooks/use-reviews'
 import { useParams } from 'next/navigation'
 
 export default function ProductPage() {
   const params = useParams()
   const slug = params.slug as string
+
   const { data: product, isLoading, isError } = useProduct(slug)
+
+  // reviews fetched separately — keeps product and reviews cache independent
+  // so submitting a review doesn't refetch the entire product
+  const { data: reviewsData } = useReviews(slug)
 
   if (isLoading) {
     return (
@@ -40,7 +46,7 @@ export default function ProductPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      {/* Top Section — Image + Info */}
+      {/* Top Section — Images + Info */}
       <div className="grid grid-cols-2 gap-12">
         <ProductImages images={product.images} productName={product.name} />
 
@@ -64,24 +70,37 @@ export default function ProductPage() {
 
       {/* Ratings + Reviews */}
       <div className="mt-16 flex flex-col gap-8">
-        <ProductRatingSummary
-          rating={product.rating}
-          reviewCount={product.reviewCount}
-          breakdown={product.ratingBreakdown}
-        />
-        <ProductReviews
-          reviews={product.reviews.map((review) => ({
-            id: parseInt(review.id),
-            name: `${review.user.firstName} ${review.user.lastName}`,
-            date: new Date(review.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            }),
-            rating: review.rating,
-            comment: review.comment,
-          }))}
-        />
+        {reviewsData && reviewsData.reviewCount > 0 ? (
+          <>
+            <ProductRatingSummary
+              rating={reviewsData.rating}
+              reviewCount={reviewsData.reviewCount}
+              breakdown={reviewsData.ratingBreakdown}
+            />
+            <ProductReviews
+              reviews={reviewsData.reviews.map((review) => ({
+                id: review.id,
+                name: `${review.user.firstName} ${review.user.lastName}`,
+                date: new Date(review.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                }),
+                rating: review.rating,
+                comment: review.comment,
+              }))}
+            />
+          </>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <h2 className="font-cormorant-garamond text-2xl font-semibold text-gray-900">
+              Ratings and reviews
+            </h2>
+            <p className="font-cormorant-garamond text-lg text-gray-400">
+              No reviews yet. Be the first to share your thoughts.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Similar Products */}

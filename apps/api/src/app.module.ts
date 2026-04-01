@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { CategoriesModule } from './categories/categories.module'
 import { ProductsModule } from './products/products.module'
+import { ReviewsModule } from './reviews/reviews.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { RedisModule } from './redis/redis.module'
 import { MailModule } from './mail/mail.module'
@@ -45,7 +46,8 @@ import * as Joi from 'joi'
     AuthModule,
     UsersModule,
     CategoriesModule,
-    ProductsModule
+    ProductsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule { }
