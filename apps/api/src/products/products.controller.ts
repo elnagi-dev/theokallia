@@ -25,7 +25,7 @@ import { Roles } from '../auth/guards/roles.guard'
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  // ─── Public endpoints ───────────────────────────────────────────────────────
+  // Public endpoints 
 
   // main shop listing — accepts all filter/sort/pagination params as query strings
   // e.g. GET /products?category=bracelets&sort=price-asc&page=1&limit=12
@@ -51,8 +51,7 @@ export class ProductsController {
     return this.productsService.findSimilar(slug)
   }
 
-  // ─── Admin endpoints ────────────────────────────────────────────────────────
-
+  // Admin endpoints 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')

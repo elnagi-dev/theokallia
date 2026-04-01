@@ -1,33 +1,38 @@
 import ProductCard from '@/components/shop/product-card'
-
-const similarProducts = [
-  {
-    id: 101,
-    name: 'Temi',
-    category: 'Gold Bracelet',
-    price: '₦5,000',
-    badge: null,
-    slug: 'temi-gold-bracelet-101',
-  },
-  {
-    id: 102,
-    name: 'Temi',
-    category: 'Gold Bracelet',
-    price: '₦5,000',
-    badge: null,
-    slug: 'temi-gold-bracelet-102',
-  },
-  {
-    id: 103,
-    name: 'Temi',
-    category: 'Gold Bracelet',
-    price: '₦5,000',
-    badge: null,
-    slug: 'temi-gold-bracelet-103',
-  },
-]
+import { useSimilarProducts } from '@/lib/hooks/use-products'
+import { useParams } from 'next/navigation'
 
 const SimilarProducts = () => {
+  const params = useParams()
+  const slug = params.slug as string
+  const { data: similarProducts, isLoading, isError } = useSimilarProducts(slug)
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6 font-cormorant-garamond">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Similar products
+        </h2>
+        <div className="flex items-center justify-center py-10">
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || !similarProducts || similarProducts.length === 0) {
+    return (
+      <div className="flex flex-col gap-6 font-cormorant-garamond">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Similar products
+        </h2>
+        <div className="flex items-center justify-center py-10">
+          <p className="text-gray-400">No similar products found.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 font-cormorant-garamond">
       <h2 className="text-2xl font-semibold text-gray-900">Similar products</h2>

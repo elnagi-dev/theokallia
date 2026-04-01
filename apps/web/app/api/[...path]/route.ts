@@ -9,9 +9,14 @@ async function handler(
   // e.g. /api/auth/login → path = ['auth', 'login']
   const { path } = await params
 
-  // reconstruct the full NestJS URL with version
+  // preserve query string from the incoming request
+  // e.g. ?category=bracelets&page=1
+  const search = req.nextUrl.search
+
+  // reconstruct the full NestJS URL with version and query string
   // e.g. http://localhost:3333/v1/auth/login
-  const url = `${process.env.API_URL}/${API_VERSION}/${path.join('/')}`
+  // e.g. http://localhost:3333/v1/products?category=bracelets&page=1
+  const url = `${process.env.API_URL}/${API_VERSION}/${path.join('/')}${search}`
 
   // forward the request to NestJS
   const res = await fetch(url, {
@@ -28,6 +33,7 @@ async function handler(
       req.method !== 'GET' && req.method !== 'HEAD'
         ? await req.text()
         : undefined,
+    cache: 'no-store',
   })
 
   // parse the NestJS response — catch handles empty responses (e.g. 204 No Content)

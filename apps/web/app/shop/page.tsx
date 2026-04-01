@@ -4,13 +4,12 @@ import SidebarFilter from '@/components/shop/sidebar-filter'
 import ProductGrid from '@/components/shop/product-grid'
 import React from 'react'
 
-const page = () => {
+const ShopPage = () => {
   return (
     <div className="w-full">
       <ShopHeader />
       <ShopBanner />
 
-      {/* Sticky header */}
       <div className="flex flex-col items-center justify-center bg-white px-20 py-20">
         <h2 className="text-center font-le-jour text-3xl">Discover Elegance</h2>
         <p className="mt-2 max-w-3xl text-center font-cormorant-garamond text-xl/6 tracking-wide">
@@ -18,7 +17,6 @@ const page = () => {
         </p>
       </div>
 
-      {/* Sidebar + Grid */}
       <div className="relative z-0 flex items-start gap-8 px-10 pb-20">
         <div className="sticky top-4 self-start">
           <SidebarFilter />
@@ -29,4 +27,4 @@ const page = () => {
   )
 }
 
-export default page
+export default ShopPage

@@ -22,14 +22,24 @@ interface Category {
 // fetches all categories with their subcategories
 // used by the sidebar filter on /shop
 const fetchCategories = async (): Promise<Category[]> => {
-  const res = await api.get('/categories')
-  return res.data
+  try {
+    const res = await api.get('/categories')
+    return res.data
+  } catch (error) {
+    console.error('Categories API error:', error)
+    throw error
+  }
 }
 
 // fetches a single category by slug with its subcategories
 const fetchCategory = async (slug: string): Promise<Category> => {
-  const res = await api.get(`/categories/${slug}`)
-  return res.data
+  try {
+    const res = await api.get(`/categories/${slug}`)
+    return res.data
+  } catch (error) {
+    console.error('Category API error:', error)
+    throw error
+  }
 }
 
 export const useCategories = () => {

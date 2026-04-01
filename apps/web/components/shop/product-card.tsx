@@ -3,15 +3,7 @@ import React from 'react'
 import { Button } from '../ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
-
-interface Product {
-  id: number
-  name: string
-  category: string
-  price: string
-  badge: string | null
-  slug: string
-}
+import { Product } from '@/lib/hooks/use-products'
 
 interface ProductCardProps {
   product: Product
@@ -23,37 +15,36 @@ const ProductCard = ({ product }: ProductCardProps) => {
       {/* Image */}
       <Link href={`/shop/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-gray-100">
-          {product.badge && (
-            <span className="absolute z-10 bg-primary px-6 py-1.5 text-sm text-white">
-              {product.badge}
-            </span>
-          )}
           <button className="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-white p-1.5 shadow">
             <Heart size={14} className="text-black" />
           </button>
-
-          <div className="relative h-full w-full bg-amber-800/20">
+          {product.images[0] && (
             <Image
-              src="/images/bracelet-2.webp"
-              alt="Product"
+              src={product.images[0]}
+              alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover"
             />
-          </div>
+          )}
         </div>
 
         {/* Info */}
-        <div className="flex items-center justify-between text-lg text-gray-900 mt-2">
+        <div className="mt-2 flex items-center justify-between text-lg text-gray-900">
           <span className="text-xl">{product.name}</span>
-          <span className="font-le-jour">{product.price}</span>
+          <span className="font-le-jour">
+            ₦{product.price.toLocaleString()}
+          </span>
         </div>
-        <p className="text-xl font-bold text-gray-900">{product.category}</p>
+        <p className="text-xl font-bold text-gray-900">
+          {product.category.name}
+        </p>
       </Link>
 
       {/* Button */}
       <Button
         variant="outline"
-        className="w-full py-5 text-base font-bold tracking-wide transition-colors hover:border-none hover:bg-primary hover:text-white"
+        className="w-full py-5 text-base font-bold tracking-wide transition-colors hover:border-none hover:bg-[#7E22CE] hover:text-white"
       >
         Add To Bag
       </Button>
