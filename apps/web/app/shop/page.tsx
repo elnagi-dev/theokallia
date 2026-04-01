@@ -2,7 +2,7 @@ import ShopBanner from '@/components/shop/shop-banner'
 import ShopHeader from '@/components/shop/shop-header'
 import SidebarFilter from '@/components/shop/sidebar-filter'
 import ProductGrid from '@/components/shop/product-grid'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 const ShopPage = () => {
   return (
@@ -19,9 +19,13 @@ const ShopPage = () => {
 
       <div className="relative z-0 flex items-start gap-8 px-10 pb-20">
         <div className="sticky top-4 self-start">
-          <SidebarFilter />
+          <Suspense>
+            <SidebarFilter />
+          </Suspense>
         </div>
-        <ProductGrid />
+        <Suspense>
+          <ProductGrid />
+        </Suspense>
       </div>
     </div>
   )
