@@ -1,10 +1,13 @@
+'use client'
+
 import ProductCard from '@/components/shop/product-card'
 import { useSimilarProducts } from '@/lib/hooks/use-products'
-import { useParams } from 'next/navigation'
 
-const SimilarProducts = () => {
-  const params = useParams()
-  const slug = params.slug as string
+interface SimilarProductsProps {
+  slug: string
+}
+
+const SimilarProducts = ({ slug }: SimilarProductsProps) => {
   const { data: similarProducts, isLoading, isError } = useSimilarProducts(slug)
 
   if (isLoading) {

@@ -74,7 +74,7 @@ export default function ProductPage() {
             id: parseInt(review.id),
             name: `${review.user.firstName} ${review.user.lastName}`,
             date: new Date(review.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
+              year: 'numeric',refactor: pass slug as prop to SimilarProducts instead of useParams
               month: 'long',
               day: 'numeric',
             }),
@@ -86,7 +86,7 @@ export default function ProductPage() {
 
       {/* Similar Products */}
       <div className="mt-16">
-        <SimilarProducts />
+        <SimilarProducts slug={slug} />
       </div>
     </main>
   )
