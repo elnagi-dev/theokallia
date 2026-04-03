@@ -9,6 +9,8 @@ import { Button } from './ui/button'
 import { Heart, ShoppingBag, User } from 'lucide-react'
 import ProfileModal from '@/components/profile/profile-modal'
 import { useAuthStore } from '@/lib/stores/auth-store'
+import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
+import { useCart } from '@/lib/hooks/use-cart'
 
 const links = [
   { name: 'Home', href: '/' },
@@ -25,6 +27,17 @@ interface NavbarProps {
 const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
   const pathname = usePathname()
   const { isAuthenticated, isLoading } = useAuthStore()
+
+  // authenticated cart — reads from React Query cache, zero extra server calls
+  const { data: dbCart } = useCart(isAuthenticated)
+
+  // guest cart — reads from Zustand store (hydrated from localStorage on app load)
+  const { items: guestItems } = useGuestCartStore()
+
+  // cart badge count — number of distinct items, not total quantity
+  const cartCount = isAuthenticated
+    ? (dbCart?.items?.length ?? 0)
+    : guestItems.length
 
   return (
     <nav className="relative container mx-auto flex items-center justify-between px-20 py-4">
@@ -58,9 +71,9 @@ const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
 
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-4">
-          {/* Render nothing while session check is in flight — prevents flash */}
-          {!isLoading && (
-            isAuthenticated ? (
+          {/* render nothing while session check is in flight — prevents auth flash */}
+          {!isLoading &&
+            (isAuthenticated ? (
               <ProfileModal
                 trigger={
                   <User
@@ -77,17 +90,28 @@ const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
                 </Button>
                 <Button onClick={onOpenSignUp}>Sign Up</Button>
               </>
-            )
-          )}
+            ))}
         </div>
 
         <div className="flex items-center gap-4 text-foreground">
+          {/* wishlist button — to be wired when wishlist module is built */}
           <Heart size={20} strokeWidth={1.5} />
+
           <Link
             href="/cart"
-            className={pathname === '/cart' ? 'text-secondary' : 'text-foreground'}
+            className={
+              pathname === '/cart' ? 'text-secondary' : 'text-foreground'
+            }
           >
-            <ShoppingBag size={20} strokeWidth={1.5} />
+            <div className="relative">
+              <ShoppingBag size={20} strokeWidth={1.5} />
+              {/* badge only renders when there are items — capped at 99 */}
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-white">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </div>
           </Link>
         </div>
       </div>

@@ -9,6 +9,8 @@ import { ReviewsModule } from './reviews/reviews.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { RedisModule } from './redis/redis.module'
 import { MailModule } from './mail/mail.module'
+import { CartModule } from './cart/cart.module'
+import { WishlistModule } from './wishlist/wishlist.module'
 import * as Joi from 'joi'
 
 @Module({
@@ -48,6 +50,8 @@ import * as Joi from 'joi'
     CategoriesModule,
     ProductsModule,
     ReviewsModule,
+    CartModule,
+    WishlistModule,
   ],
 })
 export class AppModule { }

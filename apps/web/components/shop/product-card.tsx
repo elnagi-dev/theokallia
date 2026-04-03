@@ -1,23 +1,113 @@
-import { Heart } from 'lucide-react'
-import React from 'react'
-import { Button } from '../ui/button'
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
-import { Product } from '@/lib/hooks/use-products'
+import { toast } from 'sonner'
+import { useState } from 'react'
+import { Button } from '../ui/button'
+import { useAddToCart, useCart } from '@/lib/hooks/use-cart'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
+import type { Product } from '@/lib/hooks/use-products'
 
 interface ProductCardProps {
   product: Product
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const { isAuthenticated } = useAuthStore()
+  const [showAdded, setShowAdded] = useState(false)
+
+  const { mutate: addToCart, isPending: isAdding } =
+    useAddToCart(isAuthenticated)
+
+  // authenticated cart — reads from React Query cache, zero extra server calls
+  const { data: dbCart } = useCart(isAuthenticated)
+
+  // guest cart — reads from Zustand store, synchronous
+  const { items: guestItems } = useGuestCartStore()
+
+  // how many of this product are already in the cart
+  // used to disable the button when the cart quantity has reached available stock
+  const quantityInCart = isAuthenticated
+    ? (dbCart?.items.find((i) => i.productId === product.id)?.quantity ?? 0)
+    : (guestItems.find((i) => i.productId === product.id)?.quantity ?? 0)
+
+  const isOutOfStock = !product.inStock || product.stock === 0
+  const isAtLimit = quantityInCart >= product.stock
+
+  const handleAddToCart = () => {
+    // show feedback immediately — don't wait for API round trip
+    setShowAdded(true)
+    setTimeout(() => setShowAdded(false), 2000)
+    toast.success(`${product.name} added to bag`, {
+      position: 'top-right',
+    })
+
+    addToCart(
+      {
+        productId: product.id,
+        quantity: 1,
+        // guest item carries full product details for localStorage storage
+        guestItem: !isAuthenticated
+          ? {
+              productId: product.id,
+              quantity: 1,
+              name: product.name,
+              price: product.price,
+              image: product.images[0] || '/placeholder-image.jpg',
+              categoryName: product.category.name,
+              subcategoryName: product.subcategory?.name || null,
+              slug: product.slug,
+              stock: product.stock,
+            }
+          : undefined,
+        // product data used for optimistic update in the authenticated cart cache
+        productData: isAuthenticated
+          ? {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              price: product.price,
+              images: product.images,
+              inStock: product.inStock,
+              stock: product.stock,
+              category: product.category,
+              subcategory: product.subcategory,
+            }
+          : undefined,
+      },
+      {
+        onError: () => {
+          // rollback button state and notify user the add failed
+          setShowAdded(false)
+          toast.error(
+            `Couldn't add ${product.name} to bag. Please try again.`,
+            {
+              position: 'top-right',
+            }
+          )
+        },
+      }
+    )
+  }
+
+  // derive button label from product and cart state — priority: out of stock > at limit > adding > added > default
+  const buttonLabel = isOutOfStock
+    ? 'Out of Stock'
+    : isAtLimit
+      ? 'Cart Limit Reached'
+      : showAdded
+        ? 'Added!'
+        : 'Add To Bag'
+
   return (
     <div className="flex flex-col gap-2 font-cormorant-garamond">
-      {/* Image */}
+      {/* image + info — wrapped in Link for navigation */}
       <Link href={`/shop/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-gray-100">
-          <button className="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-white p-1.5 shadow">
-            <Heart size={14} className="text-black" />
-          </button>
+          {/* wishlist button — to be wired when wishlist module is built */}
+
           {product.images[0] && (
             <Image
               src={product.images[0]}
@@ -29,7 +119,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
-        {/* Info */}
         <div className="mt-2 flex items-center justify-between text-lg text-gray-900">
           <span className="text-xl">{product.name}</span>
           <span className="font-le-jour">
@@ -41,12 +130,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </p>
       </Link>
 
-      {/* Button */}
+      {/* add to bag — outside the Link so it doesn't trigger navigation */}
       <Button
         variant="outline"
-        className="w-full py-5 text-base font-bold tracking-wide transition-colors hover:border-none hover:bg-[#7E22CE] hover:text-white"
+        onClick={handleAddToCart}
+        disabled={isOutOfStock || isAtLimit}
+        className="w-full py-5 text-base font-bold tracking-wide transition-colors hover:border-none hover:bg-[#7E22CE] hover:text-white disabled:opacity-50"
       >
-        Add To Bag
+        {buttonLabel}
       </Button>
     </div>
   )

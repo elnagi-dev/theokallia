@@ -1,96 +1,138 @@
-import React from 'react'
-import { Shield, Package, Truck, ChevronLeft } from 'lucide-react'
-import Image from 'next/image'
+'use client'
+
+import { ChevronLeft, Package, Shield, Truck } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useCart, useUpdateCartItem } from '@/lib/hooks/use-cart'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
+import CartItem from '@/components/cart/cart-item'
+import GuestCartItem from '@/components/cart/guest-cart-item'
+import { useEffect } from 'react'
 
-const cartItems = [
-  {
-    id: 1,
-    name: 'Temi',
-    description: 'Gold Bracelet',
-    price: 5000,
-    image: '/images/bracelet-2.webp',
-  },
-  {
-    id: 2,
-    name: 'Temi',
-    description: 'Gold Bracelet',
-    price: 5000,
-    image: '/images/bracelet-2.webp',
-  },
-  {
-    id: 3,
-    name: 'Temi',
-    description: 'Gold Bracelet',
-    price: 5000,
-    image: '/images/bracelet-2.webp',
-  },
-]
+// delivery fee is a fixed global constant — will move to a config endpoint when admin panel is built
+const DELIVERY_FEE = 10000
 
-const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0)
-const deliveryFee = 10000
+export default function CartPage() {
+  const { isAuthenticated, openAuthModal, setRedirectTo } = useAuthStore()
 
-const page = () => {
+  // authenticated cart — only fetches when user is logged in
+  const { data: dbCart, isLoading } = useCart(isAuthenticated)
+  const { mutate: updateItem } = useUpdateCartItem()
+
+  // guest cart — reads from Zustand store (hydrated from localStorage on app load)
+  const {
+    items: guestItems,
+    updateItem: updateGuestItem,
+    removeItem: removeGuestItem,
+    hydrate,
+  } = useGuestCartStore()
+
+  useEffect(() => {
+    // re-validate guest cart stock when user lands on cart page
+    // ensures quantities reflect any stock changes since app load
+    if (!isAuthenticated) {
+      void hydrate()
+    }
+  }, [isAuthenticated, hydrate])
+
+  // unified items and subtotal — same shape regardless of auth state
+  const items = isAuthenticated ? (dbCart?.items ?? []) : guestItems
+
+  const subtotal = isAuthenticated
+    ? (dbCart?.total ?? 0)
+    : guestItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  const orderTotal = subtotal + DELIVERY_FEE
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      // redirect back to cart after login so the user doesn't lose their place
+      setRedirectTo('/cart')
+      openAuthModal('login')
+      return
+    }
+    // TODO: navigate to checkout page
+  }
+
+  // show loading state while DB cart is fetching — guests never hit this since Zustand is synchronous
+  if (isLoading && isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full bg-white px-20 pt-10">
+        <div className="mb-12 flex items-baseline gap-4">
+          <h1 className="font-le-jour text-6xl tracking-wide uppercase">
+            Shopping Bag
+          </h1>
+        </div>
+        <div className="flex flex-col items-center py-32">
+          <p className="text-gray-500">Loading your bag...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // empty state — shown for both authenticated and guest users
+  if (items.length === 0) {
+    return (
+      <div className="min-h-screen w-full bg-white px-20 pt-10">
+        <div className="mb-12 flex items-baseline gap-4">
+          <h1 className="font-le-jour text-6xl tracking-wide uppercase">
+            Shopping Bag
+          </h1>
+          <span className="font-le-jour text-lg tracking-widest uppercase">
+            (0 Items)
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-6 py-32 text-center">
+          <p className="text-xl text-gray-600">Your bag is empty</p>
+          <Link href="/shop">
+            <Button className="bg-[#7E22CE] px-8 py-3 text-sm tracking-widest text-white uppercase hover:bg-purple-700">
+              Continue Shopping
+            </Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen w-full bg-white px-20 pt-10">
-      {/* Header */}
+      {/* header */}
       <div className="mb-12 flex items-baseline gap-4">
         <h1 className="font-le-jour text-6xl tracking-wide uppercase">
           Shopping Bag
         </h1>
         <span className="font-le-jour text-lg tracking-widest uppercase">
-          ({cartItems.length} Items)
+          ({items.length} {items.length === 1 ? 'Item' : 'Items'})
         </span>
       </div>
 
-      <div className="flex items-center">
-        {/* Cart Items */}
+      <div className="flex items-start gap-16">
+        {/* cart items — authenticated renders CartItem, guest renders GuestCartItem */}
         <div className="flex flex-1 flex-col gap-4">
-          {cartItems.map((item) => (
-            <div
-              key={item.id}
-              className="flex max-w-xl gap-6 bg-neutral-50 p-4"
-            >
-              <div className="relative h-44 w-44 shrink-0">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  className="object-cover"
+          {isAuthenticated
+            ? dbCart?.items.map((item) => (
+                <CartItem
+                  key={item.id}
+                  item={item}
+                  onUpdate={(quantity) =>
+                    updateItem({ itemId: item.id, quantity })
+                  }
                 />
-              </div>
-              <div className="flex flex-1 flex-col justify-between py-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xl font-medium">{item.name}</p>
-                    <p className="text-lg text-gray-600">{item.description}</p>
-                  </div>
-                  <p className="font-allure text-lg font-semibold text-gray-900">
-                    ₦{item.price.toLocaleString()}
-                  </p>
-                </div>
-
-                <button className="cursor-pointer text-base font-semibold underline text-start w-max">
-                  Move to wishlist
-                </button>
-
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="border border-black px-4 py-2 text-sm transition-colors hover:bg-black hover:text-white"
-                  >
-                    Remove from Cart
-                  </Button>
-                  <Button className="px-4 py-2 text-sm text-white transition-colors hover:bg-purple-700">
-                    Buy Item
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
+              ))
+            : guestItems.map((item) => (
+                <GuestCartItem
+                  key={item.productId}
+                  item={item}
+                  onUpdate={(quantity) =>
+                    updateGuestItem(item.productId, quantity)
+                  }
+                  onRemove={() => removeGuestItem(item.productId)}
+                />
+              ))}
         </div>
 
-        {/* Order Summary */}
+        {/* order summary */}
         <div className="w-md shrink-0">
           <div className="flex flex-col gap-6 border border-gray-200 p-8">
             <div className="flex items-center justify-between">
@@ -103,7 +145,11 @@ const page = () => {
             </div>
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>Delivery fee</span>
-              <span>₦{deliveryFee.toLocaleString()}</span>
+              <span>₦{DELIVERY_FEE.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm font-medium">
+              <span>Total</span>
+              <span>₦{orderTotal.toLocaleString()}.00</span>
             </div>
             <div className="flex flex-col gap-3 text-sm text-gray-700">
               <div className="flex items-center gap-3">
@@ -119,22 +165,27 @@ const page = () => {
                 <span>Fast delivery (3-5 days)</span>
               </div>
             </div>
-            <button className="w-full bg-purple-600 py-3 text-sm tracking-widest text-white uppercase transition-colors hover:bg-purple-700">
-              Proceed to Checkout
+            <button
+              onClick={handleCheckout}
+              className="w-full py-3 text-sm tracking-widest text-white uppercase transition-colors hover:bg-purple-700"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              {isAuthenticated ? 'Proceed to Checkout' : 'Sign in to Checkout'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Back to shop */}
+      {/* back to shop */}
       <div className="mt-16 mb-10">
-        <button className="flex items-center gap-1 font-le-jour text-base tracking-widest uppercase">
+        <Link
+          href="/shop"
+          className="flex items-center gap-1 font-le-jour text-base tracking-widest uppercase"
+        >
           <ChevronLeft size={24} />
           Back to Shop
-        </button>
+        </Link>
       </div>
     </div>
   )
 }
-
-export default page

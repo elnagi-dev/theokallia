@@ -19,6 +19,8 @@ model User {
   orders         Order[]
   reviews        Review[]
   refreshTokens  RefreshToken[]
+  cart           Cart?
+  wishlist       Wishlist?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
@@ -56,22 +58,24 @@ model Subcategory {
 }
 
 model Product {
-  id            String       @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  slug          String       @unique
+  slug          String         @unique
   description   String
   price         Float
   images        String[]
-  inStock       Boolean      @default(true)
-  stock         Int          @default(0)
-  category      Category     @relation(fields: [categoryId], references: [id])
+  inStock       Boolean        @default(true)
+  stock         Int            @default(0)
+  category      Category       @relation(fields: [categoryId], references: [id])
   categoryId    String
-  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+  subcategory   Subcategory?   @relation(fields: [subcategoryId], references: [id])
   subcategoryId String?
   orderItems    OrderItem[]
   reviews       Review[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Review {
@@ -104,4 +108,58 @@ model OrderItem {
   productId String
   quantity  Int
   price     Float   // snapshot of price at time of purchase
+}
+
+// Cart
+
+// One cart per user — created lazily on first add-to-cart
+model Cart {
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String     @unique // one cart per user — @unique enforces this at DB level
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// Each row is one product sitting in a cart with a quantity
+// @@unique([cartId, productId]) prevents duplicates — adding same product increments quantity instead
+model CartItem {
+  id        String   @id @default(cuid())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // a product can only appear once pear cart — duplicates increase quantity instead
+  @@unique([cartId, productId])
+}
+
+// Wishlist
+
+// One wishlist per user — created lazily on first toggle
+model Wishlist {
+  id        String         @id @default(cuid())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String         @unique // one wishlist per user
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+// Each row is one saved product — no quantity, just a bookmark
+// @@unique([wishlistId, productId]) prevents the same product appearing twice
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  wishlistId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  createdAt  DateTime @default(now())
+
+  // a product can only appear once per wishlist — toggling adds or removes it
+  @@unique([wishlistId, productId])
 }
