@@ -3,6 +3,9 @@
 import Image from 'next/image'
 import { Button } from '../ui/button'
 import { useRemoveCartItem } from '@/lib/hooks/use-cart'
+import { useToggleWishlist, useWishlist } from '@/lib/hooks/use-wishlist'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { toast } from 'sonner'
 
 interface CartItemProps {
   item: {
@@ -25,7 +28,40 @@ interface CartItemProps {
 }
 
 export default function CartItem({ item, onUpdate }: CartItemProps) {
+  const { isAuthenticated } = useAuthStore()
+
   const { mutate: removeItem, isPending: isRemoving } = useRemoveCartItem()
+
+  // silent=true — suppresses the hook's built-in toast so we can fire "moved to wishlist" instead
+  const { mutate: toggleWishlist } = useToggleWishlist(isAuthenticated, true)
+
+  // read wishlist cache to check if this product is already wishlisted
+  const { data: dbWishlist } = useWishlist(isAuthenticated)
+  const isWishlisted =
+    dbWishlist?.items.some((i) => i.productId === item.productId) ?? false
+
+  const handleMoveToWishlist = () => {
+    // build the product shape useToggleWishlist expects from the cart item
+    toggleWishlist({
+      productId: item.productId,
+      product: {
+        id: item.product.id,
+        name: item.product.name,
+        slug: item.product.slug,
+        price: item.product.price,
+        images: item.product.images,
+        inStock: item.product.inStock,
+        stock: item.product.stock,
+        category: item.product.category,
+        subcategory: item.product.subcategory,
+      },
+    })
+    // silent=true — suppresses "removed from cart" toast so "moved to wishlist" fires instead
+    removeItem({ itemId: item.id, silent: true })
+    toast.success(`${item.product.name} moved to wishlist`, {
+      position: 'top-right',
+    })
+  }
 
   return (
     <div className="flex max-w-xl gap-6 bg-neutral-50 p-4">
@@ -52,7 +88,14 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
           </p>
         </div>
 
-        {/* wishlist button — to be wired when wishlist module is built */}
+        {/* disabled when already wishlisted — text reflects current state */}
+        <button
+          onClick={handleMoveToWishlist}
+          disabled={isWishlisted || isRemoving}
+          className="w-max cursor-pointer text-start text-base font-semibold underline disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {isWishlisted ? 'Already in Wishlist' : 'Move to Wishlist'}
+        </button>
 
         {/* quantity stepper + remove */}
         <div className="flex items-center justify-between">
@@ -60,7 +103,9 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
             <button
               onClick={() =>
                 // decrement to 0 removes the item entirely
-                item.quantity > 1 ? onUpdate(item.quantity - 1) : removeItem(item.id)
+                item.quantity > 1
+                  ? onUpdate(item.quantity - 1)
+                  : removeItem({ itemId: item.id })
               }
               disabled={isRemoving}
               className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black disabled:opacity-40"
@@ -70,9 +115,9 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
             <span className="min-w-6 text-center text-sm">{item.quantity}</span>
             <button
               onClick={() => onUpdate(item.quantity + 1)}
-              // disable + when removing or when quantity has reached available stock
+              // disable when removing or when quantity has reached available stock
               disabled={isRemoving || item.quantity >= item.product.stock}
-              className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black disabled:opacity-40 disabled:border-gray-300"
+              className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black disabled:border-gray-300 disabled:opacity-40"
             >
               +
             </button>
@@ -80,7 +125,7 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
 
           <Button
             variant="outline"
-            onClick={() => removeItem(item.id)}
+            onClick={() => removeItem({ itemId: item.id })}
             disabled={isRemoving}
             className="border border-black px-4 py-2 text-sm transition-colors hover:bg-black hover:text-white disabled:opacity-40"
           >

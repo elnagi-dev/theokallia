@@ -46,17 +46,13 @@ export default function ProductPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      {/* Top Section — Images + Info */}
+      {/* top section — images + info + shipping */}
       <div className="grid grid-cols-2 gap-12">
         <ProductImages images={product.images} productName={product.name} />
 
         <div className="flex flex-col gap-6">
-          <ProductInfo
-            name={product.name}
-            category={product.category.name}
-            price={`₦${product.price.toLocaleString()}`}
-            description={product.description}
-          />
+          {/* pass full product — ProductInfo needs id, stock, images etc for cart + wishlist */}
+          <ProductInfo product={product} />
           <ProductShipping
             shipping={{
               deliveryTime: '3-5 working days',
@@ -68,7 +64,7 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {/* Ratings + Reviews */}
+      {/* ratings + reviews */}
       <div className="mt-16 flex flex-col gap-8">
         {reviewsData && reviewsData.reviewCount > 0 ? (
           <>
@@ -103,7 +99,7 @@ export default function ProductPage() {
         )}
       </div>
 
-      {/* Similar Products */}
+      {/* similar products */}
       <div className="mt-16">
         <SimilarProducts slug={slug} />
       </div>

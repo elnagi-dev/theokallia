@@ -1,18 +1,17 @@
-// guest wishlist stored in localStorage under this key
-const WISHLIST_KEY = 'theokallia_guest_wishlist'
+import type { WishlistItemProduct } from '@/components/wishlist/wishlist-item'
 
+const WISHLIST_KEY = 'theokallia_guest_wishlist'
 const isBrowser = typeof window !== 'undefined'
 
 /**
  * Reads the guest wishlist from localStorage.
  * Returns an empty array if nothing is stored or parsing fails.
- * Wishlist items are just productIds — no quantity needed.
  */
-export const getGuestWishlist = (): string[] => {
+export const getGuestWishlist = (): WishlistItemProduct[] => {
   if (!isBrowser) return []
   try {
     const raw = localStorage.getItem(WISHLIST_KEY)
-    return raw ? (JSON.parse(raw) as string[]) : []
+    return raw ? (JSON.parse(raw) as WishlistItemProduct[]) : []
   } catch {
     return []
   }
@@ -20,21 +19,21 @@ export const getGuestWishlist = (): string[] => {
 
 /**
  * Toggles a product in the guest wishlist.
- * Adds if not present, removes if already there.
- * Returns true if the product was added, false if it was removed.
+ * Adds full product object if not present, removes if already there.
+ * Returns true if added, false if removed.
  */
-export const toggleGuestWishlist = (productId: string): boolean => {
+export const toggleGuestWishlist = (product: WishlistItemProduct): boolean => {
   if (!isBrowser) return false
   const items = getGuestWishlist()
-  const index = items.indexOf(productId)
+  const index = items.findIndex((i) => i.id === product.id)
   if (index === -1) {
-    items.push(productId)
+    items.push(product)
     localStorage.setItem(WISHLIST_KEY, JSON.stringify(items))
-    return true // added
+    return true
   } else {
     items.splice(index, 1)
     localStorage.setItem(WISHLIST_KEY, JSON.stringify(items))
-    return false // removed
+    return false
   }
 }
 
@@ -43,7 +42,7 @@ export const toggleGuestWishlist = (productId: string): boolean => {
  */
 export const isInGuestWishlist = (productId: string): boolean => {
   if (!isBrowser) return false
-  return getGuestWishlist().includes(productId)
+  return getGuestWishlist().some((i) => i.id === productId)
 }
 
 /**

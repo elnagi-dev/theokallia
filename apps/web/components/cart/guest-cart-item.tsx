@@ -3,6 +3,9 @@
 import Image from 'next/image'
 import { Button } from '../ui/button'
 import type { GuestCartItemType } from '@/lib/cart-storage'
+import { useToggleWishlist } from '@/lib/hooks/use-wishlist'
+import { useGuestWishlistStore } from '@/lib/stores/guest-wishlist-store'
+import { toast } from 'sonner'
 
 interface GuestCartItemProps {
   item: GuestCartItemType
@@ -15,6 +18,44 @@ export default function GuestCartItem({
   onUpdate,
   onRemove,
 }: GuestCartItemProps) {
+  // silent=true — suppresses the hook's built-in toast so we can fire "moved to wishlist" instead
+  const { mutate: toggleWishlist } = useToggleWishlist(false, true)
+
+  // read from Zustand store — reactive, updates immediately when wishlist changes
+  const { items: guestWishlistItems } = useGuestWishlistStore()
+
+  // check if this product is already in the guest wishlist
+  const isWishlisted = guestWishlistItems.some((i) => i.id === item.productId)
+
+  // caller owns the success toast — onRemove is a plain store action with no toast
+  const handleRemove = () => {
+    onRemove()
+    toast.success(`${item.name} removed from cart`, { position: 'top-right' })
+  }
+
+  const handleMoveToWishlist = () => {
+    // build the product shape wishlist storage expects from the flat cart item
+    toggleWishlist({
+      productId: item.productId,
+      product: {
+        id: item.productId,
+        name: item.name,
+        slug: item.slug,
+        price: item.price,
+        images: [item.image],
+        inStock: item.stock > 0,
+        stock: item.stock,
+        category: { name: item.categoryName },
+        subcategory: item.subcategoryName
+          ? { name: item.subcategoryName }
+          : null,
+      },
+    })
+    // remove from cart and fire specific toast — hook toast suppressed via silent=true
+    onRemove()
+    toast.success(`${item.name} moved to wishlist`, { position: 'top-right' })
+  }
+
   return (
     <div className="flex max-w-xl gap-6 bg-neutral-50 p-4">
       <div className="relative h-44 w-44 shrink-0">
@@ -40,14 +81,22 @@ export default function GuestCartItem({
           </p>
         </div>
 
-        {/* wishlist button — to be wired when wishlist module is built */}
+        {/* disabled when already wishlisted — text reflects current state */}
+        <button
+          onClick={handleMoveToWishlist}
+          disabled={isWishlisted}
+          className="w-max cursor-pointer text-start text-base font-semibold underline disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {isWishlisted ? 'Already in Wishlist' : 'Move to Wishlist'}
+        </button>
 
         {/* quantity stepper + remove */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() =>
-                item.quantity > 1 ? onUpdate(item.quantity - 1) : onRemove()
+                // decrement to 0 removes the item entirely
+                item.quantity > 1 ? onUpdate(item.quantity - 1) : handleRemove()
               }
               className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black"
             >
@@ -56,8 +105,9 @@ export default function GuestCartItem({
             <span className="min-w-6 text-center text-sm">{item.quantity}</span>
             <button
               onClick={() => onUpdate(item.quantity + 1)}
+              // disable when quantity has reached available stock
               disabled={item.quantity >= item.stock}
-              className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black disabled:opacity-40 disabled:border-gray-300"
+              className="flex h-7 w-7 items-center justify-center border border-gray-300 text-lg leading-none transition-colors hover:border-black disabled:border-gray-300 disabled:opacity-40"
             >
               +
             </button>
@@ -65,7 +115,7 @@ export default function GuestCartItem({
 
           <Button
             variant="outline"
-            onClick={onRemove}
+            onClick={handleRemove}
             className="border border-black px-4 py-2 text-sm transition-colors hover:bg-black hover:text-white"
           >
             Remove

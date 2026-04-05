@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
+import { useGuestWishlistStore } from '@/lib/stores/guest-wishlist-store'
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -25,14 +26,15 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   } = useAuthStore()
   const pathname = usePathname()
 
-  // hydrate the guest cart store from localStorage on app load
+  // hydrate guest stores from localStorage on app load
   // must run client-side only — localStorage is not available on the server
-  const hydrate = useGuestCartStore((state) => state.hydrate)
+  const { hydrate: hydrateGuestCart } = useGuestCartStore()
+  const { hydrate: hydrateWishlist } = useGuestWishlistStore()
 
   useEffect(() => {
-    // runs once on mount — populates in-memory guest cart from persisted localStorage data
-    void hydrate()
-  }, [hydrate])
+    void hydrateGuestCart() // async — validates stock against API before setting state
+    hydrateWishlist()       // sync — just reads localStorage and sets state
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const openLogin = () => {
     setRedirectTo(pathname)

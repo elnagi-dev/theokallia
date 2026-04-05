@@ -11,6 +11,8 @@ import ProfileModal from '@/components/profile/profile-modal'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
 import { useCart } from '@/lib/hooks/use-cart'
+import { useWishlist } from '@/lib/hooks/use-wishlist'
+import { useGuestWishlistStore } from '@/lib/stores/guest-wishlist-store'
 
 const links = [
   { name: 'Home', href: '/' },
@@ -38,6 +40,17 @@ const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
   const cartCount = isAuthenticated
     ? (dbCart?.items?.length ?? 0)
     : guestItems.length
+
+  // authenticated wishlist — reads from React Query cache
+  const { data: dbWishlist } = useWishlist(isAuthenticated)
+
+  // guest wishlist — reads from Zustand store (hydrated from localStorage on app load)
+  const { items: guestWishlistItems } = useGuestWishlistStore()
+
+  // wishlist badge count — number of saved items
+  const wishlistCount = isAuthenticated
+    ? (dbWishlist?.items?.length ?? 0)
+    : guestWishlistItems.length
 
   return (
     <nav className="relative container mx-auto flex items-center justify-between px-20 py-4">
@@ -94,8 +107,21 @@ const Navbar = ({ onOpenLogin, onOpenSignUp }: NavbarProps) => {
         </div>
 
         <div className="flex items-center gap-4 text-foreground">
-          {/* wishlist button — to be wired when wishlist module is built */}
-          <Heart size={20} strokeWidth={1.5} />
+          <Link
+            href="/wishlist"
+            className={
+              pathname === '/wishlist' ? 'text-secondary' : 'text-foreground'
+            }
+          >
+            <div className="relative">
+              <Heart size={20} strokeWidth={1.5} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-white">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
+            </div>
+          </Link>
 
           <Link
             href="/cart"

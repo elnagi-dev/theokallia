@@ -5,6 +5,7 @@ import { getGuestCart, clearGuestCart } from '@/lib/cart-storage'
 import { getGuestWishlist, clearGuestWishlist } from '@/lib/wishlist-storage'
 import type { AuthUser } from '@theokallia/types'
 import { useGuestCartStore } from '../stores/guest-cart-store'
+import { useGuestWishlistStore } from '../stores/guest-wishlist-store'
 
 // --- Types ---
 
@@ -79,7 +80,7 @@ export function useResendOtp() {
  * - If the guest had items in their localStorage cart, merges them into the DB cart
  *   then clears both localStorage and the Zustand guest cart store
  * - If the guest had a wishlist in localStorage, merges it into the DB wishlist
- * - Invalidates the ['cart'] React Query cache so navbar and cart page update immediately
+ * - Invalidates the ['cart'] and ['wishlist'] React Query caches so navbar and pages update immediately
  * Tokens are set as httpOnly cookies by NestJS — never handled here.
  */
 export function useLogin() {
@@ -117,11 +118,17 @@ export function useLogin() {
       }
 
       // merge guest wishlist if localStorage has items
-      const guestWishlistIds = getGuestWishlist()
-      if (guestWishlistIds.length > 0) {
+      const guestWishlistProducts = getGuestWishlist()
+      if (guestWishlistProducts.length > 0) {
         try {
-          await api.post('/wishlist/merge', { productIds: guestWishlistIds })
+          await api.post('/wishlist/merge', {
+            productIds: guestWishlistProducts.map((p) => p.id),
+          })
           clearGuestWishlist()
+          // clear the in-memory Zustand store
+          useGuestWishlistStore.getState().clearItems()
+          // invalidate wishlist cache so navbar badge and wishlist page reflect merged state
+          queryClient.invalidateQueries({ queryKey: ['wishlist'] })
         } catch {
           // merge failure is non-fatal — guest wishlist stays in localStorage
           console.error('[useLogin] Wishlist merge failed — localStorage wishlist preserved')

@@ -29,6 +29,7 @@ export class WishlistService {
                 price: true,
                 images: true,
                 inStock: true,
+                stock: true,
                 category: { select: { name: true } },
               },
             },

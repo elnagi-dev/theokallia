@@ -9,6 +9,8 @@ import { useAddToCart, useCart } from '@/lib/hooks/use-cart'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
 import type { Product } from '@/lib/hooks/use-products'
+import { useIsWishlisted, useToggleWishlist } from '@/lib/hooks/use-wishlist'
+import { Heart } from 'lucide-react'
 
 interface ProductCardProps {
   product: Product
@@ -35,6 +37,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   const isOutOfStock = !product.inStock || product.stock === 0
   const isAtLimit = quantityInCart >= product.stock
+
+  // wishlist state — filled heart if wishlisted, empty if not
+  const { mutate: toggleWishlist } = useToggleWishlist(isAuthenticated)
+  const isWishlisted = useIsWishlisted(product.id, isAuthenticated)
 
   const handleAddToCart = () => {
     // show feedback immediately — don't wait for API round trip
@@ -106,8 +112,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
       {/* image + info — wrapped in Link for navigation */}
       <Link href={`/shop/${product.slug}`}>
         <div className="relative aspect-square overflow-hidden bg-gray-100">
-          {/* wishlist button — to be wired when wishlist module is built */}
-
+          {/* wishlist heart — outside the Link click area via stopPropagation */}
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              toggleWishlist({ productId: product.id, product })
+            }}
+            className="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-white p-1.5 shadow"
+          >
+            <Heart
+              size={14}
+              className={
+                isWishlisted ? 'fill-red-500 text-red-500' : 'text-black'
+              }
+            />
+          </button>
           {product.images[0] && (
             <Image
               src={product.images[0]}

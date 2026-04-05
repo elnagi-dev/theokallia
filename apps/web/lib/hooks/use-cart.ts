@@ -3,6 +3,7 @@ import { clearGuestCart, type GuestCartItemType } from '@/lib/cart-storage'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef } from 'react'
 import { useGuestCartStore } from '../stores/guest-cart-store'
+import { toast } from 'sonner'
 
 // types
 
@@ -264,18 +265,21 @@ export const useUpdateCartItem = () => {
 /**
  * Removes a single item from the cart by its CartItem ID.
  * Direct API call — no debounce needed, this is a deliberate single action.
+ * Pass silent=true in the mutate call to suppress the success toast
+ * when the caller fires a more specific one e.g. "moved to wishlist".
  */
 export const useRemoveCartItem = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (itemId: string) => removeCartItem(itemId),
-    onMutate: async (itemId: string) => {
+    mutationFn: ({ itemId }: { itemId: string; silent?: boolean }) => removeCartItem(itemId),
+    onMutate: async ({ itemId, silent }) => {
       // cancel any outgoing refetches to avoid overwriting the optimistic update
       await queryClient.cancelQueries({ queryKey: ['cart'] })
 
-      // snapshot for rollback
+      // snapshot the item name before removing — needed for the success toast
       const previous = queryClient.getQueryData<Cart>(['cart'])
+      const itemName = previous?.items.find((i) => i.id === itemId)?.product.name
 
       // remove the specific item from cache immediately
       queryClient.setQueryData<Cart>(['cart'], (old) => {
@@ -291,13 +295,23 @@ export const useRemoveCartItem = () => {
         }
       })
 
-      return { previous }
+      // caller suppresses when firing a more specific toast e.g. "moved to wishlist"
+      if (!silent) {
+        toast.success(`${itemName ?? 'Item'} removed from cart`, {
+          position: 'top-right',
+        })
+      }
+
+      return { previous, itemName }
     },
-    onError: (_err, _itemId, context) => {
+    onError: (_err, _variables, context) => {
       // rollback on failure
       if (context?.previous) {
         queryClient.setQueryData(['cart'], context.previous)
       }
+      toast.error("Couldn't remove item from cart. Please try again.", {
+        position: 'top-right',
+      })
     },
     onSettled: () => {
       // sync with server truth after success or failure
