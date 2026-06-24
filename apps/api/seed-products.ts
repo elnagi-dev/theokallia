@@ -1,19 +1,21 @@
-// seed-products.js
-// Run with: node seed-products.js
+const BASE_URL = process.env.SEED_API_URL
+const ACCESS_TOKEN = process.env.SEED_ACCESS_TOKEN
 
-const BASE_URL = 'https://theokallia.onrender.com/v1'
-const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbW5lN3AwZzAwMDAyc2N3MW14Z2Z6Mmd1IiwiZW1haWwiOiJyZXViZW5hZ2JvcjIwQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NDk1NjQ5NSwiZXhwIjoxNzc0OTU3Mzk1fQ.zXxQf1IVHFo-Z8fwVJiE5imk6lPl90urHeH29hxuSQY'
+if (!BASE_URL || !ACCESS_TOKEN) {
+  console.error('Missing SEED_API_URL or SEED_ACCESS_TOKEN in environment')
+  process.exit(1)
+}
 
 const headers = {
   'Content-Type': 'application/json',
-  'Cookie': `access_token=${ACCESS_TOKEN}`,
+  Cookie: `access_token=${ACCESS_TOKEN}`,
 }
 
-// ─── Products ────────────────────────────────────────────────────────────────
+// Products
 // Uses categorySlug + subcategorySlug (strings) — matches your DTO
 
 const products = [
-  // ── RINGS ────────────────────────────────────────────────────────────────
+  // RINGS
   {
     name: 'Adaeze',
     slug: 'adaeze-gold-ring',
@@ -66,7 +68,7 @@ const products = [
     subcategorySlug: 'silver-rings',
   },
 
-  // ── BRACELETS ────────────────────────────────────────────────────────────
+  // BRACELETS
   {
     name: 'Temi',
     slug: 'temi-gold-bracelet',
@@ -119,7 +121,7 @@ const products = [
     subcategorySlug: 'silver-bracelets',
   },
 
-  // ── NECKLACES ────────────────────────────────────────────────────────────
+  // NECKLACES
   {
     name: 'Amara',
     slug: 'amara-gold-necklace',
@@ -172,7 +174,7 @@ const products = [
     subcategorySlug: 'silver-necklaces',
   },
 
-  // ── EARRINGS ─────────────────────────────────────────────────────────────
+  // EARRINGS
   {
     name: 'Ife',
     slug: 'ife-gold-earrings',
@@ -226,7 +228,7 @@ const products = [
   },
 ]
 
-// ─── Seed ─────────────────────────────────────────────────────────────────────
+// Seed
 
 async function main() {
   console.log(`\nSeeding ${products.length} products...\n`)
@@ -246,16 +248,19 @@ async function main() {
       console.log(`✅ Created: ${product.name} (${product.slug})`)
       success++
     } else {
-      console.error(`❌ Failed:  ${product.name} — ${JSON.stringify(data?.message ?? data)}`)
+      console.error(
+        `❌ Failed:  ${product.name} — ${JSON.stringify(data?.message ?? data)}`,
+      )
       failed++
     }
   }
 
-  console.log(`\n─────────────────────────────────`)
-  console.log(`Done. ${success} created, ${failed} failed.`)
+  console.log(`\nDone. ${success} created, ${failed} failed.`)
 }
 
 main().catch((err) => {
   console.error('Unexpected error:', err)
   process.exit(1)
 })
+
+export {}

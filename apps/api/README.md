@@ -1,98 +1,160 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# @theokallia/api
+> NestJS REST API for Theokallia
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📦 Overview
+- NestJS REST API for auth, users, categories, products, reviews, cart, and wishlist.
+- Orders, payments, and upload are next.
+- Port `3333`; Swagger UI at `localhost:3333/docs`.
+- Deployed to Render via `@theokallia/api/Dockerfile`.
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+## 🚀 Quick Start
 ```bash
-$ pnpm install
+pnpm install
+```
+1. Set `@theokallia/api/.env`.
+2. Run the API.
+
+## 🗂️ Repository Layout
+```text
+apps/api/src/
+├── main.ts                       ✅ Helmet, cookieParser, CORS, ValidationPipe (enableImplicitConversion: true), Swagger, VersioningType.URI
+├── app.module.ts                 ✅ ConfigModule, BullModule, PrismaModule, RedisModule, MailModule, AuthModule, UsersModule, CategoriesModule, ProductsModule, ReviewsModule, CartModule, WishlistModule
+├── auth/                         ✅ all 9 endpoints complete
+├── users/                        ✅ GET /users/me, PATCH /users/me
+├── categories/                   ✅ all 8 endpoints, seeded
+├── products/                     ✅ all 6 endpoints, 12 products seeded
+├── reviews/                      ✅ all 4 endpoints complete
+├── cart/                         ✅ all 7 endpoints complete
+├── wishlist/                     ✅ all 4 endpoints complete
+│   ├── wishlist.module.ts
+│   ├── wishlist.controller.ts    ← @UseGuards(JwtAuthGuard) at class level — all endpoints require auth
+│   ├── wishlist.service.ts
+│   └── dto/
+│       ├── toggle-wishlist.dto.ts
+│       └── merge-wishlist.dto.ts
+├── prisma/                       ✅ @Global(), exposes .client getter
+├── redis/                        ✅ @Global()
+└── mail/                         ✅ BullMQ processor
+
+apps/api/src/ to be built: orders/ (next — prisma.$transaction), payments/ (Paystack init + webhook), upload/ (Cloudinary image upload)
 ```
 
-## Compile and run the project
+## 🔌 Current Endpoints
 
-```bash
-# development
-$ pnpm run start
+### Auth
+| Method | Endpoint | Guard | Description |
+|---|---|---|---|
+| POST | `/auth/register` | public | Store pending data in Redis, queue OTP email |
+| POST | `/auth/verify-otp` | public | Verify OTP, create user in DB, issue tokens |
+| POST | `/auth/resend-otp` | public | Generate new OTP, reset Redis TTLs |
+| POST | `/auth/login` | public | Verify password, issue tokens, set cookies |
+| POST | `/auth/refresh` | public | Rotate refresh token, issue new access token |
+| POST | `/auth/logout` | public | Delete refresh token from DB, clear cookies |
+| POST | `/auth/forgot-password` | public | Generate reset OTP, store in Redis, queue reset email |
+| POST | `/auth/verify-reset-otp` | public | Verify reset OTP, issue reset grant in Redis |
+| POST | `/auth/reset-password` | public | Validate grant, update password, invalidate all sessions |
 
-# watch mode
-$ pnpm run start:dev
+### Users
+| Method | Endpoint | Guard | Description |
+|---|---|---|---|
+| GET | `/users/me` | `JwtAuthGuard` | Returns current user (no password) |
+| PATCH | `/users/me` | `JwtAuthGuard` | Updates firstName, lastName, email, phone, address |
 
-# production mode
-$ pnpm run start:prod
+### Categories
+| Status | Source |
+|---|---|
+| Complete, 8 endpoints, seeded | `@theokallia/api/src/categories/` |
+
+### Products
+| Status | Source |
+|---|---|
+| Complete, 6 endpoints, 12 products seeded | `@theokallia/api/src/products/` |
+
+### Reviews
+| Method | Endpoint | Guard | Description |
+|---|---|---|---|
+| POST | `/products/:slug/reviews` | `JwtAuthGuard` | Create — one per user per product |
+| GET | `/products/:slug/reviews` | public | Get all reviews + computed rating summary |
+| PATCH | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` | Update own review only |
+| DELETE | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` | Delete own — admin can delete any |
+
+### Cart
+| Method | Endpoint | Guard | Description |
+|---|---|---|---|
+| GET | `/cart` | `JwtAuthGuard` | Get full cart with items, product details, computed total |
+| POST | `/cart` | `JwtAuthGuard` | Add item — increments if exists, validates combined stock |
+| PATCH | `/cart/:itemId` | `JwtAuthGuard` | Update quantity — validates against stock |
+| DELETE | `/cart/:itemId` | `JwtAuthGuard` | Remove single item |
+| DELETE | `/cart/clear` | `JwtAuthGuard` | Clear all items (used after checkout) |
+| POST | `/cart/merge` | `JwtAuthGuard` | Merge guest localStorage cart into DB cart after login |
+| POST | `/cart/validate-guest` | public | Return current stock for a list of productIds — used by guest cart hydration |
+
+### Wishlist
+| Method | Endpoint | Guard | Description |
+|---|---|---|---|
+| GET | `/wishlist` | `JwtAuthGuard` | Get full wishlist with product details. Creates empty wishlist if none exists |
+| POST | `/wishlist/toggle` | `JwtAuthGuard` | Add if not present, remove if already there. Returns `{ wishlisted: boolean, wishlist }` |
+| POST | `/wishlist/merge` | `JwtAuthGuard` | Merge guest localStorage productIds into DB wishlist after login. Skips duplicates |
+| DELETE | `/wishlist/:itemId` | `JwtAuthGuard` | Remove specific item by WishlistItem id |
+
+## 🔐 Authentication
+- httpOnly cookies: `access_token` + `refresh_token`.
+- Access token lifetime: `15m`.
+- Refresh token lifetime: `7d`.
+- `req.user` shape: `{ userId: string, email: string, role: string }`.
+- Access token is extracted from the `access_token` httpOnly cookie and verified against `JWT_ACCESS_SECRET`.
+
+| Guard | File | Purpose |
+|---|---|---|
+| `JwtAuthGuard` | `auth/guards/jwt-auth.guard.ts` | Verifies access token, populates `req.user` |
+| `RolesGuard` | `auth/guards/roles.guard.ts` | Checks `req.user.role` against `@Roles()` decorator |
+
+## ⚙️ Environment Variables
+```env
+NODE_ENV=development
+PORT=3333
+FRONTEND_URL=http://localhost:3000
+DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=verify-full
+JWT_ACCESS_SECRET=...
+JWT_REFRESH_SECRET=...
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+REDIS_URL=rediss://default:...@upstash.io:6379
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your-gmail@gmail.com
+MAIL_PASS=your-16-char-app-password
+MAIL_FROM=your-gmail@gmail.com
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+## 🚢 Deployment
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g pnpm
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/types/package.json ./packages/types/
+COPY packages/typescript-config/package.json ./packages/typescript-config/
+RUN pnpm install --frozen-lockfile
+COPY . .
+WORKDIR /app/apps/api
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+RUN pnpm build
+EXPOSE 3333
+CMD ["node", "/app/apps/api/dist/src/main"]
 ```
 
-## Deployment
+Render uses the Dockerfile above.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 📚 Documentation
+| Document | Link |
+|---|---|
+| API architecture | [`apps/api/docs/architecture.md`](apps/api/docs/architecture.md) |
+| API rules | [`apps/api/docs/rules.md`](apps/api/docs/rules.md) |
