@@ -13,12 +13,7 @@ const api = axios.create({
 // suppress 401 console errors — expected when user is not logged in
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status !== 401) {
-      console.error(error)
-    }
-    return Promise.reject(error)
-  },
+  (error) => Promise.reject(error),
 )
 
 export default api

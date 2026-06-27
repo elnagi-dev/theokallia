@@ -9,50 +9,68 @@ import {
 } from '@/components/ui/dialog'
 import SignUpForm from '@/components/auth/sign-up-form'
 import LoginForm from '@/components/auth/login-form'
-import OtpForm from '@/components/auth/otp-form'
+import CheckEmail from '@/components/auth/check-email'
 import EmailVerified from '@/components/auth/email-verified'
 import ForgotPasswordForm from '@/components/auth/forgot-password-form'
-import ResetOtpForm from '@/components/auth/reset-otp-form'
 import ResetPasswordForm from '@/components/auth/reset-password-form'
 import PasswordResetSuccess from '@/components/auth/password-reset-success'
 import TermsOfService from '@/components/auth/terms-of-service'
 import PrivacyPolicy from '@/components/auth/privacy-policy'
+import { useAuthStore } from '@/lib/stores/auth-store'
 
 type AuthView =
   | 'login'
   | 'sign-up'
-  | 'otp'
+  | 'check-email'
   | 'verified'
-  | 'forgot-password'
-  | 'reset-otp'
   | 'reset-password'
+  | 'forgot-password'
   | 'password-reset-success'
   | 'terms'
   | 'privacy'
 
 interface AuthModalProps {
   isOpen: boolean
-  initialView: 'login' | 'sign-up'
+  initialView: 'login' | 'sign-up' | 'check-email' | 'verified' | 'reset-password'
   onClose: () => void
 }
+
+const VERIFIED_DELAY_MS = 2500
 
 export default function AuthModal({ isOpen, initialView, onClose }: AuthModalProps) {
   const [view, setView] = useState<AuthView>(initialView)
   const [previousView, setPreviousView] = useState<AuthView>(initialView)
-  const [email, setEmail] = useState<string>('')
+  // Keep the signup email around so the check-email step can poll the server.
+  const [email, setEmail] = useState('')
+  // Reuse the same slot for password-reset resend.
+  const [resetEmail, setResetEmail] = useState('')
+  const { resetToken, setResetToken } = useAuthStore()
 
   useEffect(() => {
     setView(initialView)
     setPreviousView(initialView)
   }, [initialView])
 
+  useEffect(() => {
+    if (view !== 'verified') return
+
+    // Show the success state briefly, then return to login.
+    const timer = setTimeout(() => {
+      setView('login')
+    }, VERIFIED_DELAY_MS)
+
+    return () => clearTimeout(timer)
+  }, [view])
+
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       onClose()
+      setEmail('')
+      setResetEmail('')
+      setResetToken(null)
     } else {
       setView(initialView)
       setPreviousView(initialView)
-      setEmail('')
     }
   }
 
@@ -77,24 +95,22 @@ export default function AuthModal({ isOpen, initialView, onClose }: AuthModalPro
         <DialogTitle className="sr-only">
           {view === 'sign-up' && 'Sign Up'}
           {view === 'login' && 'Login'}
-          {view === 'otp' && 'Verify Email'}
+          {view === 'check-email' && 'Check Email'}
           {view === 'verified' && 'Email Verified'}
+          {view === 'reset-password' && 'Reset Password'}
           {view === 'forgot-password' && 'Forgot Password'}
-          {view === 'reset-otp' && 'Enter Reset Code'}
-          {view === 'reset-password' && 'Create New Password'}
-          {view === 'password-reset-success' && 'Password Reset Successful'}
+          {view === 'password-reset-success' && 'Check Email'}
           {view === 'terms' && 'Terms of Service'}
           {view === 'privacy' && 'Privacy Policy'}
         </DialogTitle>
         <DialogDescription className="sr-only">
           {view === 'sign-up' && 'Create your account to get started'}
           {view === 'login' && 'Sign in to your existing account'}
-          {view === 'otp' && 'Enter the verification code sent to your email'}
-          {view === 'verified' && 'Your email has been successfully verified'}
-          {view === 'forgot-password' && 'Enter your email to receive a password reset code'}
-          {view === 'reset-otp' && 'Enter the reset code sent to your email'}
-          {view === 'reset-password' && 'Create your new password'}
-          {view === 'password-reset-success' && 'Your password has been reset successfully'}
+          {view === 'check-email' && 'Check your email to continue'}
+          {view === 'verified' && 'Your email has already been verified'}
+          {view === 'reset-password' && 'Create a new password'}
+          {view === 'forgot-password' && 'Enter your email to receive a password reset link'}
+          {view === 'password-reset-success' && 'Your reset link has been sent'}
           {view === 'terms' && 'Terms of service for Theokallia'}
           {view === 'privacy' && 'Privacy policy for Theokallia'}
         </DialogDescription>
@@ -102,7 +118,10 @@ export default function AuthModal({ isOpen, initialView, onClose }: AuthModalPro
         {view === 'sign-up' && (
           <SignUpForm
             onSwitchToLogin={() => setView('login')}
-            onSwitchToOtp={(userEmail) => { setEmail(userEmail); setView('otp') }}
+            onEmailSent={(userEmail) => {
+              setEmail(userEmail)
+              setView('check-email')
+            }}
             {...legalProps}
           />
         )}
@@ -116,46 +135,46 @@ export default function AuthModal({ isOpen, initialView, onClose }: AuthModalPro
           />
         )}
 
-        {view === 'otp' && (
-          <OtpForm
+        {view === 'check-email' && (
+          <CheckEmail
             email={email}
             onVerified={() => setView('verified')}
-            onBack={() => setView('sign-up')}
-            {...legalProps}
           />
         )}
 
         {view === 'verified' && (
-          <EmailVerified onContinue={onClose} />
+          <EmailVerified />
+        )}
+
+        {view === 'reset-password' && (
+          <ResetPasswordForm
+            token={resetToken ?? ''}
+            onSuccess={() => {
+              setResetToken(null)
+              setView('login')
+            }}
+            onTerms={openTerms}
+            onPrivacy={openPrivacy}
+          />
         )}
 
         {view === 'forgot-password' && (
           <ForgotPasswordForm
-            onEmailSent={(userEmail) => { setEmail(userEmail); setView('reset-otp') }}
+            // Better Auth sends the reset callback back into the modal flow.
+            onEmailSent={(userEmail) => {
+              setResetEmail(userEmail)
+              setView('password-reset-success')
+            }}
             onBack={() => setView('login')}
             {...legalProps}
           />
         )}
 
-        {view === 'reset-otp' && (
-          <ResetOtpForm
-            email={email}
-            onVerified={() => setView('reset-password')}
-            onBack={() => setView('forgot-password')}
-            {...legalProps}
-          />
-        )}
-
-        {view === 'reset-password' && (
-          <ResetPasswordForm
-            email={email}
-            onSuccess={() => setView('password-reset-success')}
-            {...legalProps}
-          />
-        )}
-
         {view === 'password-reset-success' && (
-          <PasswordResetSuccess onContinue={() => setView('login')} />
+          <PasswordResetSuccess
+            email={resetEmail}
+            onContinue={() => setView('login')}
+          />
         )}
 
         {view === 'terms' && (

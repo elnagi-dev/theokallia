@@ -20,6 +20,12 @@
 ## 1. Overview
 `@theokallia/web` is the Next.js storefront for Theokallia. It runs on port `3000`, is deployed to Vercel, and sends all API traffic through `app/api/[...path]/route.ts`.
 
+Auth uses a same-origin Better Auth client at `/api/auth`, with modal-based login, signup verification, and password reset flows.
+
+Required production env vars:
+- `API_URL`
+- `NEXT_PUBLIC_APP_URL`
+
 Guest cart and guest wishlist use Zustand + localStorage. Authenticated cart and wishlist state lives in React Query caches.
 
 ## 2. Repository Layout
@@ -61,7 +67,8 @@ apps/web/
 │   │   └── similar-products.tsx      ✅
 │   └── ui/                           ✅ Shadcn
 ├── lib/
-│   ├── api.ts                        ✅ axios + API_VERSION + 401 interceptor
+│   ├── api.ts                        ✅ axios + API_VERSION
+│   ├── env.js                        ✅ shared NEXT_PUBLIC_APP_URL
 │   ├── cart-storage.ts               ✅ guest cart localStorage helpers + stock cap
 │   ├── wishlist-storage.ts           ✅ guest wishlist localStorage helpers (full product objects)
 │   ├── stores/
@@ -97,6 +104,7 @@ apps/web/
 ## 4. Catch-All Proxy
 ```typescript
 import { API_VERSION } from '@/lib/api'
+import { env } from '@/lib/env'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function handler(
@@ -105,12 +113,24 @@ async function handler(
 ) {
   const { path } = await params
   const search = req.nextUrl.search
-  const url = `${process.env.API_URL}/${API_VERSION}/${path.join('/')}${search}`
+  const isAuthRoute = path[0] === 'auth'
+  const apiUrl =
+    process.env.API_URL ??
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3333' : '')
+
+  if (!apiUrl) {
+    throw new Error('API_URL is required in production')
+  }
+
+  const url = isAuthRoute
+    ? `${apiUrl}/api/auth/${path.slice(1).join('/')}${search}`
+    : `${apiUrl}/${API_VERSION}/${path.join('/')}${search}`
 
   const res = await fetch(url, {
     method: req.method,
     headers: {
       'Content-Type': 'application/json',
+      origin: req.headers.get('origin') ?? env.NEXT_PUBLIC_APP_URL,
       cookie: req.headers.get('cookie') ?? '',
     },
     body:
@@ -142,7 +162,9 @@ export const DELETE = handler
 Critical rules:
 - `req.nextUrl.search` MUST be appended or all query params are silently dropped.
 - `cache: 'no-store'` MUST be set or Next.js caches the first response for all subsequent requests.
-- `cookie` header MUST be forwarded for `JwtAuthGuard` to work.
+- Auth routes are proxied to `/api/auth`; other routes use `API_VERSION`.
+- `cookie` header MUST be forwarded so the upstream auth/session layer can read the session cookies.
+- `origin` MUST be forwarded for Better Auth requests.
 - `set-cookie` MUST be forwarded back with `forEach` + `append` for both auth cookies.
 
 ## 5. `lib/api.ts`
@@ -159,24 +181,19 @@ const api = axios.create({
   },
 })
 
-// suppress 401 console errors — expected when user is not logged in
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status !== 401) {
-      console.error(error)
-    }
-    return Promise.reject(error)
-  },
-)
-
 export default api
 ```
 
-`API_VERSION` is the single source of truth. The interceptor suppresses console errors for 401 responses.
+`API_VERSION` is the single source of truth.
 
 ## 6. Auth Flow
-`AuthProvider` fires `GET /users/me` on mount; if valid, `isAuthenticated` becomes `true`. The same query is enabled on tab visibility change and gates the authenticated React Query hooks.
+`AuthProvider` resolves the current session with `authClient.useSession()` on mount. If a session exists, `setUser()` marks the user authenticated and the navbar/profile/cart hooks unlock.
+
+The auth modal is URL-driven for verification and password reset only:
+- `/?auth=verified` opens the short verified state and broadcasts it to other tabs.
+- `/?auth=reset-password&token=...` opens the reset form and stores the token in Zustand.
+
+Login and logout are triggered directly by UI actions, then broadcast to other tabs with `BroadcastChannel` plus `storage` fallback.
 
 Zustand holds the auth store; authenticated cart and wishlist live in React Query caches (`['cart']`, `['wishlist']`).
 
@@ -260,7 +277,7 @@ hydrateWishlist()        // sync — just reads localStorage and sets state
 4. Navbar badge updates immediately.
 
 ### Authenticated flow
-`AuthProvider` fires `GET /users/me`. If valid, `isAuthenticated` becomes `true` → `useCart` and `useWishlist` in navbar become enabled → both fire their fetches → badges update. Both have `staleTime: 0`.
+`authClient.useSession()` resolves the user. If valid, `isAuthenticated` becomes `true` → `useCart` and `useWishlist` in navbar become enabled → both fire their fetches → badges update. Both have `staleTime: 0`.
 
 ### On login transition
 1. `setUser` fires.
@@ -268,6 +285,12 @@ hydrateWishlist()        // sync — just reads localStorage and sets state
 3. Guest wishlist merges via `POST /wishlist/merge`.
 4. LocalStorage + Zustand are cleared.
 5. `['cart']` and `['wishlist']` are invalidated.
+
+### Login / logout sync
+1. `useLogin()` emits `auth:login`.
+2. Other tabs receive the event, refetch the session, and close any open auth modal.
+3. `useLogout()` emits `auth:logout`.
+4. Other tabs receive the event, refetch the session, and clear the local auth state.
 
 ## 10. Shop Page Architecture
 `ShopPage` is a simple server component — no `searchParams`, no filter parsing, no props to `ProductGrid`. `SidebarFilter` and `ProductGrid` are client components that read from `useSearchParams` directly.

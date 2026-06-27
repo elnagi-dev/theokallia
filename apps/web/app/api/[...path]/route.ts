@@ -1,4 +1,5 @@
 import { API_VERSION } from '@/lib/api'
+import { env } from '@/lib/env'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function handler(
@@ -13,10 +14,20 @@ async function handler(
   // e.g. ?category=bracelets&page=1
   const search = req.nextUrl.search
 
-  // reconstruct the full NestJS URL with version and query string
-  // e.g. http://localhost:3333/v1/auth/login
-  // e.g. http://localhost:3333/v1/products?category=bracelets&page=1
-  const url = `${process.env.API_URL}/${API_VERSION}/${path.join('/')}${search}`
+  const isAuthRoute = path[0] === 'auth'
+  const apiUrl =
+    process.env.API_URL ??
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3333' : '')
+
+  if (!apiUrl) {
+    throw new Error('API_URL is required in production')
+  }
+
+  // reconstruct the upstream URL with the API version and query string
+  // auth stays on the Better Auth base path, while everything else stays versioned.
+  const url = isAuthRoute
+    ? `${apiUrl}/api/auth/${path.slice(1).join('/')}${search}`
+    : `${apiUrl}/${API_VERSION}/${path.join('/')}${search}`
 
   // forward the request to NestJS
   const res = await fetch(url, {
@@ -24,7 +35,9 @@ async function handler(
 
     headers: {
       'Content-Type': 'application/json',
-      // forward the browser's cookies to NestJS so JwtAuthGuard can read access_token
+      // Better Auth rejects requests with no Origin, so forward the browser origin.
+      origin: req.headers.get('origin') ?? env.NEXT_PUBLIC_APP_URL,
+      // forward the browser's cookies so the upstream auth/session middleware can read them
       cookie: req.headers.get('cookie') ?? '',
     },
 

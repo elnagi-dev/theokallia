@@ -52,7 +52,7 @@
 ## Naming Conventions
 | Thing | Convention | Example |
 |---|---|---|
-| Files | kebab-case | `product-card.tsx`, `jwt.strategy.ts` |
+| Files | kebab-case | `product-card.tsx`, `auth-client.ts` |
 | React components | PascalCase | `ProductCard`, `AuthModal` |
 | Variables/functions | camelCase | `handleClick`, `fetchProducts` |
 | Types/Interfaces | PascalCase | `Product`, `RegisterDto` |

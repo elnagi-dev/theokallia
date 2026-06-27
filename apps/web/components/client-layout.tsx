@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import Navbar from '@/components/navbar'
 import Footer from '@/components/footer'
 import BackToTop from '@/components/back-to-top'
@@ -46,17 +46,19 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   }
 
   return (
-    <AuthProvider>
-      <Navbar onOpenLogin={openLogin} onOpenSignUp={openSignUp} />
-      <main className="flex-1">{children}</main>
-      <BackToTop />
-      <Footer />
-      <AuthModal
-        isOpen={authModalOpen}
-        initialView={authModalView}
-        onClose={closeAuthModal}
-      />
-      <Toaster />
-    </AuthProvider>
+    <Suspense fallback={null}>
+      <AuthProvider>
+        <Navbar onOpenLogin={openLogin} onOpenSignUp={openSignUp} />
+        <main className="flex-1">{children}</main>
+        <BackToTop />
+        <Footer />
+        <AuthModal
+          isOpen={authModalOpen}
+          initialView={authModalView}
+          onClose={closeAuthModal}
+        />
+        <Toaster />
+      </AuthProvider>
+    </Suspense>
   )
 }

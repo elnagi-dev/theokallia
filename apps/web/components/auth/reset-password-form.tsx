@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -14,20 +14,21 @@ import {
 import { useResetPassword } from '@/lib/hooks/use-auth'
 
 interface ResetPasswordFormProps {
-  email: string
+  token: string
   onSuccess: () => void
-  onTerms: () => void
-  onPrivacy: () => void
+  onTerms?: () => void
+  onPrivacy?: () => void
 }
 
 export default function ResetPasswordForm({
-  email,
+  token,
   onSuccess,
   onTerms,
   onPrivacy,
 }: ResetPasswordFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [isComplete, setIsComplete] = useState(false)
   const { mutate: resetPassword, isPending } = useResetPassword()
 
   const {
@@ -41,15 +42,70 @@ export default function ResetPasswordForm({
 
   function onSubmit(data: ResetPasswordInput) {
     resetPassword(
-      { email, password: data.password },
+      { token, password: data.password },
       {
-        onSuccess: () => onSuccess(),
+        onSuccess: () => setIsComplete(true),
         onError: (error) => {
           setError('root', {
             message: error.message ?? 'Something went wrong. Please try again.',
           })
         },
       }
+    )
+  }
+
+  useEffect(() => {
+    if (!isComplete) return
+
+    // Show the success state briefly, then return to login.
+    const timer = window.setTimeout(() => {
+      onSuccess()
+    }, 1500)
+
+    return () => window.clearTimeout(timer)
+  }, [isComplete, onSuccess])
+
+  if (isComplete) {
+    return (
+      <div className="flex flex-col items-center px-2 py-4">
+        <div className="mb-6 animate-pulse">
+          <svg
+            width="80"
+            height="80"
+            viewBox="0 0 80 80"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M40 4L46.5 14.5L59 10L58 23.5L70 28L63 39.5L70 51L58 55.5L59 69L46.5 64.5L40 75L33.5 64.5L21 69L22 55.5L10 51L17 39.5L10 28L22 23.5L21 10L33.5 14.5L40 4Z"
+              fill="#7E22CE"
+            />
+            <path
+              d="M28 40L36 48L53 31"
+              stroke="white"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+
+        <h2
+          className="mb-3 text-center text-2xl font-normal"
+          style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
+        >
+          Password reset successful
+        </h2>
+
+        <p
+          className="text-center text-sm leading-relaxed text-gray-500"
+          style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
+        >
+          Your new password has been saved.
+          <br />
+          Opening the login form now.
+        </p>
+      </div>
     )
   }
 
@@ -141,18 +197,20 @@ export default function ResetPasswordForm({
         </Button>
       </form>
 
-      <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
-        <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
-          Terms of service
-        </span>
-        <span>|</span>
-        <span
-          onClick={onPrivacy}
-          className="cursor-pointer hover:text-gray-600"
-        >
-          Privacy policy
-        </span>
-      </div>
+      {onTerms && onPrivacy && (
+        <div className="mt-8 flex justify-center gap-3 text-xs text-gray-400">
+          <span onClick={onTerms} className="cursor-pointer hover:text-gray-600">
+            Terms of service
+          </span>
+          <span>|</span>
+          <span
+            onClick={onPrivacy}
+            className="cursor-pointer hover:text-gray-600"
+          >
+            Privacy policy
+          </span>
+        </div>
+      )}
     </div>
   )
 }

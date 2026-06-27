@@ -4,7 +4,6 @@ import { Cormorant_Garamond } from 'next/font/google'
 import localFont from 'next/font/local'
 import ClientLayout from '@/components/client-layout'
 import { QueryProvider } from '@/lib/providers/query-provider'
-// import AuthProvider from '@/lib/providers/auth-provider'
 
 const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
@@ -39,9 +38,7 @@ export default function RootLayout({
         className={`${cormorantGaramond.variable} ${leJour.variable} ${allure.variable} flex min-h-full flex-col antialiased`}
       >
         <QueryProvider>
-          {/* <AuthProvider> */}
           <ClientLayout>{children}</ClientLayout>
-          {/* </AuthProvider> */}
         </QueryProvider>
       </body>
     </html>

@@ -9,7 +9,7 @@
 ## 📦 Overview
 - Next.js storefront for the public shop, product pages, cart, wishlist, auth, and profile.
 - Port `3000`; deployed to Vercel.
-- All API calls go through `app/api/[...path]/route.ts`.
+- Most API calls go through `app/api/[...path]/route.ts`; auth uses the same-origin Better Auth client at `/api/auth`.
 - Guest cart and guest wishlist use Zustand + localStorage.
 
 ## 🚀 Quick Start
@@ -22,7 +22,10 @@ pnpm install
 ## ⚙️ Environment Variables
 ```env
 API_URL=http://localhost:3333
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+Production requires both variables to be set to real URLs.
 
 ## 🗂️ Repository Layout
 ```text
@@ -41,7 +44,7 @@ apps/web/
 │   ├── providers/
 │   │   ├── auth-provider.tsx         ✅
 │   │   └── query-provider.tsx        ✅
-│   ├── auth/                         ✅ all wired
+│   ├── auth/                         ✅ modal-based Better Auth flow
 │   ├── profile/                      ✅ profile-modal, edit-profile-form, logout-confirm-dialog
 │   ├── cart/
 │   │   ├── cart-item.tsx             ✅ Move to Wishlist wired — silent toggle, disabled when already wishlisted
@@ -63,7 +66,8 @@ apps/web/
 │   │   └── similar-products.tsx      ✅
 │   └── ui/                           ✅ Shadcn
 ├── lib/
-│   ├── api.ts                        ✅ axios + API_VERSION + 401 interceptor
+│   ├── api.ts                        ✅ axios + API_VERSION
+│   ├── env.js                        ✅ shared NEXT_PUBLIC_APP_URL
 │   ├── cart-storage.ts               ✅ guest cart localStorage helpers + stock cap
 │   ├── wishlist-storage.ts           ✅ guest wishlist localStorage helpers (full product objects)
 │   ├── stores/
@@ -71,7 +75,7 @@ apps/web/
 │   │   ├── guest-cart-store.ts       ✅ Zustand, async hydrate with API stock sync
 │   │   └── guest-wishlist-store.ts   ✅ Zustand, sync hydrate from localStorage
 │   ├── hooks/
-│   │   ├── use-auth.ts               ✅ cart + wishlist merge on login fully implemented
+│   │   ├── use-auth.ts               ✅ cart + wishlist merge on login, password reset, session sync
 │   │   ├── use-profile.ts            ✅
 │   │   ├── use-categories.ts         ✅
 │   │   ├── use-products.ts           ✅
@@ -98,18 +102,19 @@ apps/web/
 
 ## 🧠 Key Architecture Decisions
 ### Catch-all Proxy
-`app/api/[...path]/route.ts` forwards requests to `API_URL` with `API_VERSION`, forwards cookies, preserves query params, and returns `set-cookie` headers.
+`app/api/[...path]/route.ts` forwards requests to `API_URL` with `API_VERSION`, forwards cookies, preserves query params, and returns `set-cookie` headers. Auth routes are routed to `/api/auth`.
 
 Critical rules:
 - `req.nextUrl.search` MUST be appended.
 - `cache: 'no-store'` MUST be set.
-- `cookie` header MUST be forwarded for `JwtAuthGuard`.
+- `cookie` header MUST be forwarded so the upstream auth/session layer can read it.
 - `set-cookie` MUST be forwarded back with `forEach` + `append`.
 
 ### Shop Page
 `ShopPage` is a simple server component; `SidebarFilter` and `ProductGrid` are client components that read from `useSearchParams` directly.
 
 ### App Load
+- `authClient.useSession()` resolves the current Better Auth session on mount.
 - `void hydrateGuestCart()` is async and validates stock before setting state.
 - `hydrateWishlist()` is sync and reads localStorage directly.
 - Authenticated cart and wishlist live in React Query caches (`['cart']`, `['wishlist']`).

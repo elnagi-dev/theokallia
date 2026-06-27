@@ -53,7 +53,7 @@ export default function ForgotPasswordForm({
         className="mb-8 text-center text-sm text-gray-500"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
-        Enter your email and we&apos;ll send you a reset code.
+        Enter your email and we&apos;ll send you a reset link.
       </p>
 
       <form
@@ -91,7 +91,7 @@ export default function ForgotPasswordForm({
             fontFamily: 'var(--font-cormorant-garamond)',
           }}
         >
-          {isPending ? 'Sending...' : 'Send reset code'}
+          {isPending ? 'Sending...' : 'Send reset link'}
         </button>
 
         <button

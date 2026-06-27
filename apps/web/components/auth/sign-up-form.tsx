@@ -12,20 +12,21 @@ import { Eye, EyeOff } from 'lucide-react'
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void
-  onSwitchToOtp: (email: string) => void
+  onEmailSent: (email: string) => void
   onTerms: () => void
   onPrivacy: () => void
 }
 
 export default function SignUpForm({
   onSwitchToLogin,
-  onSwitchToOtp,
+  onEmailSent,
   onTerms,
   onPrivacy,
 }: SignUpFormProps) {
   const { mutate: register, isPending } = useRegister()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register: field,
@@ -33,9 +34,14 @@ export default function SignUpForm({
     formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      termsAccepted: false,
+    },
   })
 
   function onSubmit(data: SignUpFormData) {
+    setServerError(null)
+
     register(
       {
         firstName: data.firstName,
@@ -45,10 +51,10 @@ export default function SignUpForm({
       },
       {
         onSuccess: () => {
-          onSwitchToOtp(data.email)
+          onEmailSent(data.email)
         },
         onError: (error) => {
-          console.error(error.message)
+          setServerError(error.message)
         },
       }
     )
@@ -186,6 +192,7 @@ export default function SignUpForm({
           <input
             id="terms"
             type="checkbox"
+            {...field('termsAccepted')}
             className="h-3.5 w-3.5 accent-purple-700"
           />
           <label htmlFor="terms" className="text-xs text-gray-600">
@@ -196,6 +203,13 @@ export default function SignUpForm({
             and conditions
           </label>
         </div>
+        {errors.termsAccepted && (
+          <p className="-mt-2 text-xs text-red-500">
+            {errors.termsAccepted.message}
+          </p>
+        )}
+
+        {serverError && <p className="text-xs text-red-500">{serverError}</p>}
 
         <Button
           type="submit"
