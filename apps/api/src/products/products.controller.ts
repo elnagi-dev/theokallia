@@ -12,11 +12,11 @@ import {
   HttpStatus,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth'
 import { ProductsService } from './products.service'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import { FilterProductsDto } from './dto/filter-products.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/guards/roles.guard'
 
@@ -30,6 +30,7 @@ export class ProductsController {
   // main shop listing — accepts all filter/sort/pagination params as query strings
   // e.g. GET /products?category=bracelets&sort=price-asc&page=1&limit=12
   @Get()
+  @AllowAnonymous()
   @ApiOperation({ summary: 'List all products with optional filtering and sorting' })
   findAll(@Query() filters: FilterProductsDto) {
     return this.productsService.findAll(filters)
@@ -38,6 +39,7 @@ export class ProductsController {
   // product detail page — fetches full product data including reviews and rating
   // e.g. GET /products/temi-gold-bracelet
   @Get(':slug')
+  @AllowAnonymous()
   @ApiOperation({ summary: 'Get a single product by slug' })
   findOne(@Param('slug') slug: string) {
     return this.productsService.findOneBySlug(slug)
@@ -46,6 +48,7 @@ export class ProductsController {
   // similar products section on the product detail page
   // e.g. GET /products/temi-gold-bracelet/similar
   @Get(':slug/similar')
+  @AllowAnonymous()
   @ApiOperation({ summary: 'Get 3 similar products from the same category' })
   findSimilar(@Param('slug') slug: string) {
     return this.productsService.findSimilar(slug)
@@ -53,7 +56,7 @@ export class ProductsController {
 
   // Admin endpoints 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new product (admin only)' })
@@ -62,7 +65,7 @@ export class ProductsController {
   }
 
   @Patch(':slug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a product by slug (admin only)' })
@@ -71,7 +74,7 @@ export class ProductsController {
   }
 
   @Delete(':slug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)

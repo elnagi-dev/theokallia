@@ -5,8 +5,6 @@ import {
   Get,
   Param,
   Post,
-  Req,
-  UseGuards,
 } from '@nestjs/common'
 import {
   ApiBearerAuth,
@@ -15,15 +13,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger'
-import { Request } from 'express'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { Session, UserSession } from '@thallesp/nestjs-better-auth'
 import { ToggleWishlistDto } from './dto/toggle-wishlist.dto'
 import { WishlistService } from './wishlist.service'
 import { MergeWishlistDto } from './dto/merge-wishlist.dto'
 
 @ApiTags('Wishlist')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('wishlist')
 export class WishlistController {
   constructor(private readonly wishlistService: WishlistService) { }
@@ -35,8 +31,8 @@ export class WishlistController {
   })
   @ApiResponse({ status: 200, description: 'Wishlist returned successfully' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  getWishlist(@Req() req: Request) {
-    return this.wishlistService.getWishlist((req.user as any)['userId'])
+  getWishlist(@Session() session: UserSession) {
+    return this.wishlistService.getWishlist(session.user.id)
   }
 
   @Post('toggle')
@@ -47,8 +43,8 @@ export class WishlistController {
   @ApiResponse({ status: 201, description: 'Toggled. Check wishlisted field in response.' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  toggleItem(@Req() req: Request, @Body() dto: ToggleWishlistDto) {
-    return this.wishlistService.toggleItem((req.user as any)['userId'], dto)
+  toggleItem(@Session() session: UserSession, @Body() dto: ToggleWishlistDto) {
+    return this.wishlistService.toggleItem(session.user.id, dto)
   }
 
   @Post('merge')
@@ -58,8 +54,8 @@ export class WishlistController {
   })
   @ApiResponse({ status: 201, description: 'Wishlists merged, full DB wishlist returned' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  mergeWishlist(@Req() req: Request, @Body() dto: MergeWishlistDto) {
-    return this.wishlistService.mergeWishlist((req.user as any)['userId'], dto)
+  mergeWishlist(@Session() session: UserSession, @Body() dto: MergeWishlistDto) {
+    return this.wishlistService.mergeWishlist(session.user.id, dto)
   }
 
   @Delete(':itemId')
@@ -71,7 +67,7 @@ export class WishlistController {
   @ApiResponse({ status: 200, description: 'Item removed, updated wishlist returned' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   @ApiResponse({ status: 404, description: 'Wishlist item not found' })
-  removeItem(@Req() req: Request, @Param('itemId') itemId: string) {
-    return this.wishlistService.removeItem((req.user as any)['userId'], itemId)
+  removeItem(@Session() session: UserSession, @Param('itemId') itemId: string) {
+    return this.wishlistService.removeItem(session.user.id, itemId)
   }
 }

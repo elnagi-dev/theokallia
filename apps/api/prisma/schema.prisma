@@ -7,33 +7,75 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  firstName      String
-  lastName       String
-  email          String         @unique
-  password       String         // bcryptjs hash
-  role           String         @default("customer") // 'customer' | 'admin'
-  emailVerified  Boolean        @default(false)
-  phone          String?
-  address        String?
-  orders         Order[]
-  reviews        Review[]
-  refreshTokens  RefreshToken[]
-  cart           Cart?
-  wishlist       Wishlist?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  firstName     String
+  lastName      String
+  phone         String?
+  address       String?
+  role          String    @default("customer")
+  sessions      Session[]
+  accounts      Account[]
+  orders        Order[]
+  reviews       Review[]
+  cart          Cart?
+  wishlist      Wishlist?
+
+  @@unique([email])
+  @@map("user")
 }
 
-// Stores hashed refresh tokens for token rotation
-// Old token deleted and new one created on every refresh
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique // hashed refresh token
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+model Session {
+  id        String   @id
   expiresAt DateTime
+  token     String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
 model Category {
@@ -110,20 +152,15 @@ model OrderItem {
   price     Float   // snapshot of price at time of purchase
 }
 
-// Cart
-
-// One cart per user — created lazily on first add-to-cart
 model Cart {
   id        String     @id @default(cuid())
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String     @unique // one cart per user — @unique enforces this at DB level
+  userId    String     @unique
   items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
 
-// Each row is one product sitting in a cart with a quantity
-// @@unique([cartId, productId]) prevents duplicates — adding same product increments quantity instead
 model CartItem {
   id        String   @id @default(cuid())
   cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
@@ -134,24 +171,18 @@ model CartItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // a product can only appear once pear cart — duplicates increase quantity instead
   @@unique([cartId, productId])
 }
 
-// Wishlist
-
-// One wishlist per user — created lazily on first toggle
 model Wishlist {
   id        String         @id @default(cuid())
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String         @unique // one wishlist per user
+  userId    String         @unique
   items     WishlistItem[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 }
 
-// Each row is one saved product — no quantity, just a bookmark
-// @@unique([wishlistId, productId]) prevents the same product appearing twice
 model WishlistItem {
   id         String   @id @default(cuid())
   wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
@@ -160,6 +191,5 @@ model WishlistItem {
   productId  String
   createdAt  DateTime @default(now())
 
-  // a product can only appear once per wishlist — toggling adds or removes it
   @@unique([wishlistId, productId])
 }

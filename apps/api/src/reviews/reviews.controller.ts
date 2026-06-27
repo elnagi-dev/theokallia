@@ -6,8 +6,6 @@ import {
   Param,
   Patch,
   Post,
-  Req,
-  UseGuards,
 } from '@nestjs/common'
 import {
   ApiBearerAuth,
@@ -16,20 +14,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger'
-import { Request } from 'express'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { AllowAnonymous, Session, UserSession } from '@thallesp/nestjs-better-auth'
 import { CreateReviewDto } from './dto/create-review.dto'
 import { UpdateReviewDto } from './dto/update-review.dto'
 import { ReviewsService } from './reviews.service'
-
-// extend express Request to include the user populated by JwtAuthGuard
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string
-    email: string
-    role: string
-  }
-}
 
 @ApiTags('Reviews')
 @Controller('products/:slug/reviews')
@@ -39,7 +27,6 @@ export class ReviewsController {
   // Create Review
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Leave a review for a product' })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'temi-gold-bracelets' })
@@ -50,14 +37,15 @@ export class ReviewsController {
   create(
     @Param('slug') slug: string,
     @Body() dto: CreateReviewDto,
-    @Req() req: AuthenticatedRequest,
+    @Session() session: UserSession,
   ) {
-    return this.reviewsService.create(slug, req.user.userId, dto)
+    return this.reviewsService.create(slug, session.user.id, dto)
   }
 
   // List Reviews
 
   @Get()
+  @AllowAnonymous()
   @ApiOperation({ summary: 'Get all reviews for a product' })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'temi-gold-bracelets' })
   @ApiResponse({ status: 200, description: 'Reviews retrieved successfully' })
@@ -69,7 +57,6 @@ export class ReviewsController {
   // Update Review
 
   @Patch(':reviewId')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update your own review' })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'temi-gold-bracelets' })
@@ -81,15 +68,14 @@ export class ReviewsController {
   update(
     @Param('reviewId') reviewId: string,
     @Body() dto: UpdateReviewDto,
-    @Req() req: AuthenticatedRequest,
+    @Session() session: UserSession,
   ) {
-    return this.reviewsService.update(reviewId, req.user.userId, dto)
+    return this.reviewsService.update(reviewId, session.user.id, dto)
   }
 
   // Delete Review
 
   @Delete(':reviewId')
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a review — own review or admin' })
   @ApiParam({ name: 'slug', description: 'Product slug', example: 'temi-gold-bracelets' })
@@ -100,8 +86,12 @@ export class ReviewsController {
   @ApiResponse({ status: 404, description: 'Review not found' })
   remove(
     @Param('reviewId') reviewId: string,
-    @Req() req: AuthenticatedRequest,
+    @Session() session: UserSession,
   ) {
-    return this.reviewsService.remove(reviewId, req.user.userId, req.user.role)
+    return this.reviewsService.remove(
+      reviewId,
+      session.user.id,
+      session.user.role as string,
+    )
   }
 }

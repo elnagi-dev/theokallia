@@ -11,12 +11,12 @@ import {
   HttpStatus,
 } from '@nestjs/common'
 import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth'
 import { CategoriesService } from './categories.service'
 import { CreateCategoryDto } from './dto/create-category.dto'
 import { UpdateCategoryDto } from './dto/update-category.dto'
 import { CreateSubcategoryDto } from './dto/create-subcategory.dto'
 import { UpdateSubcategoryDto } from './dto/update-subcategory.dto'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/guards/roles.guard'
 
@@ -27,12 +27,14 @@ export class CategoriesController {
   // Public endpoints
 
   @Get()
+  @AllowAnonymous()
   @ApiOperation({ summary: 'List all categories with their subcategories' })
   findAll() {
     return this.categoriesService.findAllCategories()
   }
 
   @Get(':slug')
+  @AllowAnonymous()
   @ApiOperation({ summary: 'Get a single category by slug with its subcategories' })
   findOne(@Param('slug') slug: string) {
     return this.categoriesService.findOneCategory(slug)
@@ -41,7 +43,7 @@ export class CategoriesController {
   // Admin endpoints
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new category (admin only)' })
@@ -50,7 +52,7 @@ export class CategoriesController {
   }
 
   @Patch(':slug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a category by slug (admin only)' })
@@ -59,7 +61,7 @@ export class CategoriesController {
   }
 
   @Delete(':slug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -71,7 +73,7 @@ export class CategoriesController {
   // Subcategory endpoints (nested under category slug)
 
   @Post(':slug/subcategories')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a subcategory under a category (admin only)' })
@@ -83,7 +85,7 @@ export class CategoriesController {
   }
 
   @Patch(':slug/subcategories/:subSlug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a subcategory (admin only)' })
@@ -96,7 +98,7 @@ export class CategoriesController {
   }
 
   @Delete(':slug/subcategories/:subSlug')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)

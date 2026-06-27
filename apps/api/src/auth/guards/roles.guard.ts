@@ -24,12 +24,13 @@ export class RolesGuard implements CanActivate {
     // If no @Roles() decorator is present, allow all authenticated users
     if (!requiredRoles) return true
 
-    // Extract the user from the request (populated by JwtAuthGuard)
-    // Role comes directly from JWT payload — no DB lookup needed
     const request = context
       .switchToHttp()
-      .getRequest<{ user?: { role?: string } }>()
+      .getRequest<{ session?: { user?: { role?: string | string[] } } }>()
 
-    return requiredRoles.includes(request.user?.role ?? '')
+    const role = request.session?.user?.role
+    const normalizedRole = Array.isArray(role) ? role[0] : role ?? ''
+
+    return requiredRoles.includes(normalizedRole)
   }
 }

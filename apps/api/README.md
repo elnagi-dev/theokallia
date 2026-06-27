@@ -7,7 +7,8 @@
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
 ## 📦 Overview
-- NestJS REST API for auth, users, categories, products, reviews, cart, and wishlist.
+- NestJS REST API for users, categories, products, reviews, cart, and wishlist.
+- Authentication is handled by Better Auth under `/api/auth/*`.
 - Orders, payments, and upload are next.
 - Port `3333`; Swagger UI at `localhost:3333/docs`.
 - Deployed to Render via `@theokallia/api/Dockerfile`.
@@ -22,21 +23,15 @@ pnpm install
 ## 🗂️ Repository Layout
 ```text
 apps/api/src/
+├── auth.ts                       ✅ Better Auth instance (email/password, verification, reset password, custom user fields)
 ├── main.ts                       ✅ Helmet, cookieParser, CORS, ValidationPipe (enableImplicitConversion: true), Swagger, VersioningType.URI
-├── app.module.ts                 ✅ ConfigModule, BullModule, PrismaModule, RedisModule, MailModule, AuthModule, UsersModule, CategoriesModule, ProductsModule, ReviewsModule, CartModule, WishlistModule
-├── auth/                         ✅ all 9 endpoints complete
+├── app.module.ts                 ✅ ConfigModule, BullModule, PrismaModule, RedisModule, MailModule, BetterAuthModule, UsersModule, CategoriesModule, ProductsModule, ReviewsModule, CartModule, WishlistModule
 ├── users/                        ✅ GET /users/me, PATCH /users/me
 ├── categories/                   ✅ all 8 endpoints, seeded
 ├── products/                     ✅ all 6 endpoints, 12 products seeded
 ├── reviews/                      ✅ all 4 endpoints complete
 ├── cart/                         ✅ all 7 endpoints complete
 ├── wishlist/                     ✅ all 4 endpoints complete
-│   ├── wishlist.module.ts
-│   ├── wishlist.controller.ts    ← @UseGuards(JwtAuthGuard) at class level — all endpoints require auth
-│   ├── wishlist.service.ts
-│   └── dto/
-│       ├── toggle-wishlist.dto.ts
-│       └── merge-wishlist.dto.ts
 ├── prisma/                       ✅ @Global(), exposes .client getter
 ├── redis/                        ✅ @Global()
 └── mail/                         ✅ BullMQ processor
@@ -47,23 +42,16 @@ apps/api/src/ to be built: orders/ (next — prisma.$transaction), payments/ (Pa
 ## 🔌 Current Endpoints
 
 ### Auth
-| Method | Endpoint | Guard | Description |
-|---|---|---|---|
-| POST | `/auth/register` | public | Store pending data in Redis, queue OTP email |
-| POST | `/auth/verify-otp` | public | Verify OTP, create user in DB, issue tokens |
-| POST | `/auth/resend-otp` | public | Generate new OTP, reset Redis TTLs |
-| POST | `/auth/login` | public | Verify password, issue tokens, set cookies |
-| POST | `/auth/refresh` | public | Rotate refresh token, issue new access token |
-| POST | `/auth/logout` | public | Delete refresh token from DB, clear cookies |
-| POST | `/auth/forgot-password` | public | Generate reset OTP, store in Redis, queue reset email |
-| POST | `/auth/verify-reset-otp` | public | Verify reset OTP, issue reset grant in Redis |
-| POST | `/auth/reset-password` | public | Validate grant, update password, invalidate all sessions |
+- Better Auth handles authentication under `/api/auth/*`.
+- Session access in controllers uses `@Session()` and `session.user.id`.
+- Public routes use `@AllowAnonymous()`.
+- Roles use `session.user.role` via `RolesGuard`.
 
 ### Users
 | Method | Endpoint | Guard | Description |
 |---|---|---|---|
-| GET | `/users/me` | `JwtAuthGuard` | Returns current user (no password) |
-| PATCH | `/users/me` | `JwtAuthGuard` | Updates firstName, lastName, email, phone, address |
+| GET | `/users/me` | Better Auth session | Returns current user |
+| PATCH | `/users/me` | Better Auth session | Updates firstName, lastName, phone, address |
 
 ### Categories
 | Status | Source |
@@ -78,41 +66,36 @@ apps/api/src/ to be built: orders/ (next — prisma.$transaction), payments/ (Pa
 ### Reviews
 | Method | Endpoint | Guard | Description |
 |---|---|---|---|
-| POST | `/products/:slug/reviews` | `JwtAuthGuard` | Create — one per user per product |
+| POST | `/products/:slug/reviews` | Better Auth session | Create — one per user per product |
 | GET | `/products/:slug/reviews` | public | Get all reviews + computed rating summary |
-| PATCH | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` | Update own review only |
-| DELETE | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` | Delete own — admin can delete any |
+| PATCH | `/products/:slug/reviews/:reviewId` | Better Auth session | Update own review only |
+| DELETE | `/products/:slug/reviews/:reviewId` | Better Auth session | Delete own — admin can delete any |
 
 ### Cart
 | Method | Endpoint | Guard | Description |
 |---|---|---|---|
-| GET | `/cart` | `JwtAuthGuard` | Get full cart with items, product details, computed total |
-| POST | `/cart` | `JwtAuthGuard` | Add item — increments if exists, validates combined stock |
-| PATCH | `/cart/:itemId` | `JwtAuthGuard` | Update quantity — validates against stock |
-| DELETE | `/cart/:itemId` | `JwtAuthGuard` | Remove single item |
-| DELETE | `/cart/clear` | `JwtAuthGuard` | Clear all items (used after checkout) |
-| POST | `/cart/merge` | `JwtAuthGuard` | Merge guest localStorage cart into DB cart after login |
+| GET | `/cart` | Better Auth session | Get full cart with items, product details, computed total |
+| POST | `/cart` | Better Auth session | Add item — increments if exists, validates combined stock |
+| PATCH | `/cart/:itemId` | Better Auth session | Update quantity — validates against stock |
+| DELETE | `/cart/:itemId` | Better Auth session | Remove single item |
+| DELETE | `/cart/clear` | Better Auth session | Clear all items (used after checkout) |
+| POST | `/cart/merge` | Better Auth session | Merge guest localStorage cart into DB cart after login |
 | POST | `/cart/validate-guest` | public | Return current stock for a list of productIds — used by guest cart hydration |
 
 ### Wishlist
 | Method | Endpoint | Guard | Description |
 |---|---|---|---|
-| GET | `/wishlist` | `JwtAuthGuard` | Get full wishlist with product details. Creates empty wishlist if none exists |
-| POST | `/wishlist/toggle` | `JwtAuthGuard` | Add if not present, remove if already there. Returns `{ wishlisted: boolean, wishlist }` |
-| POST | `/wishlist/merge` | `JwtAuthGuard` | Merge guest localStorage productIds into DB wishlist after login. Skips duplicates |
-| DELETE | `/wishlist/:itemId` | `JwtAuthGuard` | Remove specific item by WishlistItem id |
+| GET | `/wishlist` | Better Auth session | Get full wishlist with product details. Creates empty wishlist if none exists |
+| POST | `/wishlist/toggle` | Better Auth session | Add if not present, remove if already there. Returns `{ wishlisted: boolean, wishlist }` |
+| POST | `/wishlist/merge` | Better Auth session | Merge guest localStorage productIds into DB wishlist after login. Skips duplicates |
+| DELETE | `/wishlist/:itemId` | Better Auth session | Remove specific item by WishlistItem id |
 
 ## 🔐 Authentication
-- httpOnly cookies: `access_token` + `refresh_token`.
-- Access token lifetime: `15m`.
-- Refresh token lifetime: `7d`.
-- `req.user` shape: `{ userId: string, email: string, role: string }`.
-- Access token is extracted from the `access_token` httpOnly cookie and verified against `JWT_ACCESS_SECRET`.
-
-| Guard | File | Purpose |
-|---|---|---|
-| `JwtAuthGuard` | `auth/guards/jwt-auth.guard.ts` | Verifies access token, populates `req.user` |
-| `RolesGuard` | `auth/guards/roles.guard.ts` | Checks `req.user.role` against `@Roles()` decorator |
+- Better Auth uses session cookies and the built-in NestJS integration.
+- `session.user.id` is the canonical auth identity.
+- `session.user.role` drives admin checks.
+- `RolesGuard` is the only custom auth guard left in the API.
+- Mail verification and password reset use BullMQ jobs with links, not OTP codes.
 
 ## ⚙️ Environment Variables
 ```env
@@ -120,10 +103,8 @@ NODE_ENV=development
 PORT=3333
 FRONTEND_URL=http://localhost:3000
 DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=verify-full
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+BETTER_AUTH_SECRET=...
+BETTER_AUTH_URL=http://localhost:3333
 REDIS_URL=rediss://default:...@upstash.io:6379
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
@@ -148,7 +129,7 @@ ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 RUN pnpm build
 EXPOSE 3333
-CMD ["node", "/app/apps/api/dist/src/main"]
+CMD ["node", "dist/main"]
 ```
 
 Render uses the Dockerfile above.

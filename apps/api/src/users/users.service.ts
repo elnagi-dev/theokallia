@@ -7,7 +7,6 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
   // Find a user by their database ID
-  // Called after JWT verification to get the full user record
   async findById(userId: string) {
     const user = await this.prisma.client.user.findUnique({
       where: { id: userId },
@@ -17,16 +16,23 @@ export class UsersService {
       throw new NotFoundException('User not found')
     }
 
-    // Never return the password hash to the client
-    const { password: _password, ...userWithoutPassword } = user
-    return userWithoutPassword
+    return user
   }
 
-  // Find a user by email — used internally by AuthService during login
+  // Find a user by email
   async findByEmail(email: string) {
     return this.prisma.client.user.findUnique({
       where: { email },
     })
+  }
+
+  // Check whether the account tied to this email has already been verified.
+  async isEmailVerified(email: string) {
+    const user = await this.findByEmail(email)
+
+    return {
+      verified: user?.emailVerified ?? false,
+    }
   }
 
   // Update the current user's profile
@@ -37,8 +43,6 @@ export class UsersService {
       data: dto,
     })
 
-    // Never return the password hash to the client
-    const { password: _password, ...userWithoutPassword } = user
-    return userWithoutPassword
+    return user
   }
 }

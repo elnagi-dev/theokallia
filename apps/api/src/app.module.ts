@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { BullModule } from '@nestjs/bullmq'
-import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { CategoriesModule } from './categories/categories.module'
 import { ProductsModule } from './products/products.module'
@@ -11,6 +10,8 @@ import { RedisModule } from './redis/redis.module'
 import { MailModule } from './mail/mail.module'
 import { CartModule } from './cart/cart.module'
 import { WishlistModule } from './wishlist/wishlist.module'
+import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth'
+import { auth } from './auth/auth'
 import * as Joi from 'joi'
 
 @Module({
@@ -23,10 +24,8 @@ import * as Joi from 'joi'
         PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
-        JWT_ACCESS_SECRET: Joi.string().required(),
-        JWT_REFRESH_SECRET: Joi.string().required(),
-        JWT_ACCESS_EXPIRES_IN: Joi.string().required(),
-        JWT_REFRESH_EXPIRES_IN: Joi.string().required(),
+        BETTER_AUTH_SECRET: Joi.string().required(),
+        BETTER_AUTH_URL: Joi.string().required(),
         REDIS_URL: Joi.string().required(),
         MAIL_HOST: Joi.string().required(),
         MAIL_PORT: Joi.number().required(),
@@ -42,10 +41,10 @@ import * as Joi from 'joi'
         tls: {},
       },
     }),
+    BetterAuthModule.forRoot({ auth }),
     PrismaModule,
     RedisModule,
     MailModule,
-    AuthModule,
     UsersModule,
     CategoriesModule,
     ProductsModule,
@@ -54,4 +53,4 @@ import * as Joi from 'joi'
     WishlistModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

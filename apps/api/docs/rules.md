@@ -4,9 +4,10 @@
 > Status: Active
 
 ## Guards & Auth
-- Use `@UseGuards(JwtAuthGuard)` per-method if ANY endpoint in the controller is public (e.g. cart).
-- Use class-level `@UseGuards(JwtAuthGuard)` if ALL endpoints require auth (e.g. wishlist, users).
-- `req.user` gives `{ userId, email, role }`; use `userId` to look up `User`.
+- Use `@Session()` from `@thallesp/nestjs-better-auth` for authenticated handlers.
+- Use `@AllowAnonymous()` for public endpoints.
+- Use `session.user.id` as the authenticated user identity.
+- Use `session.user.role` for admin checks.
 - Admin routes use `@UseGuards(RolesGuard)` + `@Roles('admin')`.
 - `@Roles()` is exported from `auth/guards/roles.guard.ts`.
 
@@ -35,9 +36,9 @@ this.prisma.product.findMany(...)
 
 ## Email
 - Mail via BullMQ only; never call `nodemailer.sendMail()` directly.
+- Verification and password reset use link jobs only.
 
 ## Imports & Types
-- Do not import from `@theokallia/types` in `@theokallia/api`.
 - `VersioningType` imports from `@nestjs/common`, not `@nestjs/core`.
 - `Record<K, V>` always needs both type arguments; never use `as Record<K>` casting.
 
