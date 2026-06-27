@@ -116,21 +116,14 @@ packages/
 | Backend | NestJS |
 | ORM | Prisma v7 |
 | Database | Neon PostgreSQL |
-| Auth | Custom NestJS Auth |
+| Auth | Better Auth |
 | Auth sessions | httpOnly cookies |
-| Password hashing | bcryptjs |
-| OTP storage | Upstash Redis |
-| Pending registration | Upstash Redis |
-| Reset OTP storage | Upstash Redis |
-| Reset grant storage | Upstash Redis |
-| Refresh tokens | `RefreshToken` DB table |
 | Email queue | BullMQ + Upstash Redis |
 | Email sender | Nodemailer |
 | Guest cart | Zustand + localStorage |
 | Guest wishlist | Zustand + localStorage |
 | Caching | Upstash Redis |
-| Rate limiting | `@nestjs/throttler` |
-| Validation | `class-validator` + `class-transformer` |
+| Rate limiting | Upstash Ratelimit (planned) |
 | Deployment | Render |
 | Google OAuth | Deferred |
 | Payments | Paystack |
@@ -159,20 +152,10 @@ model User {
   address        String?
   orders         Order[]
   reviews        Review[]
-  refreshTokens  RefreshToken[]
   cart           Cart?
   wishlist       Wishlist?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-}
-
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
 }
 
 model Category {
@@ -295,8 +278,7 @@ model OrderItem {
 **Schema notes:**
 - `rating` and `reviewCount` NOT stored on `Product` — computed from `Review` table at query time
 - `price` on `OrderItem` is a snapshot — history unaffected by price changes
-- No `OtpCode` model — Redis handles OTP entirely
-- `RefreshToken.token` stores a bcrypt hash — never the raw token
+- No `OtpCode` model — Better Auth manages email verification tokens
 - `Cart` is one-per-user (`userId @unique`), created lazily via upsert on first cart access
 - `CartItem` has `@@unique([cartId, productId])` — one entry per product per cart
 - `Wishlist` is one-per-user (`userId @unique`), created lazily via upsert on first wishlist access
@@ -330,23 +312,13 @@ export type AuthUser = Omit<User, 'createdAt' | 'updatedAt'>
 | Production API | `https://api.theokallia.com/v1` |
 
 ### Auth
-| Method | Endpoint | Guard |
-|---|---|---|
-| POST | `/auth/register` | public |
-| POST | `/auth/verify-otp` | public |
-| POST | `/auth/resend-otp` | public |
-| POST | `/auth/login` | public |
-| POST | `/auth/refresh` | public |
-| POST | `/auth/logout` | public |
-| POST | `/auth/forgot-password` | public |
-| POST | `/auth/verify-reset-otp` | public |
-| POST | `/auth/reset-password` | public |
+Auth is managed by Better Auth and routed through the catch-all proxy to the NestJS server. The client uses a same-origin Better Auth client at `/api/auth`. See [Section 7](#7-authentication-architecture) for details.
 
 ### Users
-| Method | Endpoint | Guard |
+| Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/users/me` | `JwtAuthGuard` |
-| PATCH | `/users/me` | `JwtAuthGuard` |
+| GET | `/users/me` | authenticated |
+| PATCH | `/users/me` | authenticated |
 
 ### Categories
 | Status | Source |
@@ -361,36 +333,37 @@ Source README does not enumerate the individual category routes.
 Source README does not enumerate the individual product routes.
 
 ### Reviews
-| Method | Endpoint | Guard |
+| Method | Endpoint | Auth |
 |---|---|---|
-| POST | `/products/:slug/reviews` | `JwtAuthGuard` |
+| POST | `/products/:slug/reviews` | authenticated |
 | GET | `/products/:slug/reviews` | public |
-| PATCH | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` |
-| DELETE | `/products/:slug/reviews/:reviewId` | `JwtAuthGuard` |
+| PATCH | `/products/:slug/reviews/:reviewId` | authenticated |
+| DELETE | `/products/:slug/reviews/:reviewId` | authenticated |
 
 ### Cart
-| Method | Endpoint | Guard |
+| Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/cart` | `JwtAuthGuard` |
-| POST | `/cart` | `JwtAuthGuard` |
-| PATCH | `/cart/:itemId` | `JwtAuthGuard` |
-| DELETE | `/cart/:itemId` | `JwtAuthGuard` |
-| DELETE | `/cart/clear` | `JwtAuthGuard` |
-| POST | `/cart/merge` | `JwtAuthGuard` |
+| GET | `/cart` | authenticated |
+| POST | `/cart` | authenticated |
+| PATCH | `/cart/:itemId` | authenticated |
+| DELETE | `/cart/:itemId` | authenticated |
+| DELETE | `/cart/clear` | authenticated |
+| POST | `/cart/merge` | authenticated |
 | POST | `/cart/validate-guest` | public |
 
 ### Wishlist
-| Method | Endpoint | Guard |
+| Method | Endpoint | Auth |
 |---|---|---|
-| GET | `/wishlist` | `JwtAuthGuard` |
-| POST | `/wishlist/toggle` | `JwtAuthGuard` |
-| POST | `/wishlist/merge` | `JwtAuthGuard` |
-| DELETE | `/wishlist/:itemId` | `JwtAuthGuard` |
+| GET | `/wishlist` | authenticated |
+| POST | `/wishlist/toggle` | authenticated |
+| POST | `/wishlist/merge` | authenticated |
+| DELETE | `/wishlist/:itemId` | authenticated |
 
 ### Catch-All Proxy
 `@theokallia/web/app/api/[...path]/route.ts`
 ```typescript
 import { API_VERSION } from '@/lib/api'
+import { env } from '@/lib/env'
 import { NextRequest, NextResponse } from 'next/server'
 
 async function handler(
@@ -399,12 +372,24 @@ async function handler(
 ) {
   const { path } = await params
   const search = req.nextUrl.search
-  const url = `${process.env.API_URL}/${API_VERSION}/${path.join('/')}${search}`
+  const isAuthRoute = path[0] === 'auth'
+  const apiUrl =
+    process.env.API_URL ??
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3333' : '')
+
+  if (!apiUrl) {
+    throw new Error('API_URL is required in production')
+  }
+
+  const url = isAuthRoute
+    ? `${apiUrl}/api/auth/${path.slice(1).join('/')}${search}`
+    : `${apiUrl}/${API_VERSION}/${path.join('/')}${search}`
 
   const res = await fetch(url, {
     method: req.method,
     headers: {
       'Content-Type': 'application/json',
+      origin: req.headers.get('origin') ?? env.NEXT_PUBLIC_APP_URL,
       cookie: req.headers.get('cookie') ?? '',
     },
     body:
@@ -435,93 +420,119 @@ export const DELETE = handler
 Critical rules:
 - `req.nextUrl.search` MUST be appended or query params are dropped.
 - `cache: 'no-store'` MUST be set.
-- `cookie` MUST be forwarded for `JwtAuthGuard`.
-- `set-cookie` MUST be forwarded back with `forEach` + `append`.
+- `cookie` MUST be forwarded so the upstream auth/session layer can read the session cookies.
+- `origin` MUST be forwarded for Better Auth requests.
+- `set-cookie` MUST be forwarded back with `forEach` + `append` for both auth cookies.
 
 ## 7. Authentication Architecture
-### Auth endpoints
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Store pending data in Redis, queue OTP email |
-| POST | `/auth/verify-otp` | Verify OTP, create user in DB, issue tokens |
-| POST | `/auth/resend-otp` | Generate new OTP, reset Redis TTLs |
-| POST | `/auth/login` | Verify password, issue tokens, set cookies |
-| POST | `/auth/refresh` | Rotate refresh token, issue new access token |
-| POST | `/auth/logout` | Delete refresh token from DB, clear cookies |
-| POST | `/auth/forgot-password` | Generate reset OTP, store in Redis, queue reset email |
-| POST | `/auth/verify-reset-otp` | Verify reset OTP, issue reset grant in Redis |
-| POST | `/auth/reset-password` | Validate grant, update password, invalidate all sessions |
+### Overview
+Auth is provided by **Better Auth**, a server-side auth library with a first-party React client. The NestJS backend exposes Better Auth at `/api/auth/*`. The Next.js frontend uses a same-origin Better Auth client at `/api/auth` (relative URL, resolved at runtime).
+
+Better Auth manages: user creation, email/password login, session cookies, email verification links, and password reset links. It uses its own `user`, `session`, `account`, and `verification` tables in the database (auto-managed via Prisma adapter).
+
+### Server-side setup (`apps/api/src/auth/auth.ts`)
+```ts
+import { betterAuth } from 'better-auth'
+import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { PrismaClient } from '@prisma/client'
+import { Queue } from 'bullmq'
+
+const prisma = new PrismaClient()
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, { provider: 'postgresql' }),
+  emailAndPassword: { enabled: true },
+  user: {
+    additionalFields: { role: { type: 'string', required: true, defaultValue: 'customer' } },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await mailQueue.add('send-verification-email', { user, url })
+    },
+  },
+  sendResetPassword: async ({ user, url }) => {
+    await mailQueue.add('send-reset-password', { user, url })
+  },
+  baseURL: process.env.BETTER_AUTH_URL!,
+  secret: process.env.BETTER_AUTH_SECRET!,
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: 'lax',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    },
+  },
+})
+```
+
+### Client-side setup (`apps/web/lib/auth-client.ts`)
+```ts
+import { createAuthClient } from 'better-auth/react'
+
+export const authClient = createAuthClient({
+  baseURL: '/api/auth',
+})
+```
+
+All requests go through the Next.js catch-all proxy (`apps/web/app/api/[...path]/route.ts`), which forwards them to the NestJS server.
 
 ### Flows
 ```text
-Register
-POST /auth/register { firstName, lastName, email, password }
-  → verify user does not already exist
-  → delete old unverified DB record if present
-  → bcryptjs hash password (10 rounds)
-  → store pending-registration:{email} in Redis (300s)
-  → generate 4-digit OTP and store otp:{email} in Redis (300s)
-  → queue send-otp job
+Sign Up
+→ authClient.signUp.email({ email, password, name })
+→ Browser POST /api/auth/register → proxy → NestJS
+→ Better Auth creates user (emailVerified: false), queues verification email
+→ User clicks verification link → Better Auth marks emailVerified: true
+→ Frontend shows check-email modal → user reopens app → session resolves → authenticated
 
-Verify OTP
-POST /auth/verify-otp { email, otp }
-  → read otp:{email} and pending-registration:{email}
-  → create User (emailVerified: true, role: 'customer')
-  → delete Redis keys
-  → sign access token (15m)
-  → sign + hash + store refresh token (7d)
-  → set access_token + refresh_token cookies
+Sign In
+→ authClient.signIn.email({ email, password })
+→ Browser POST /api/auth/login → proxy → NestJS
+→ Better Auth validates password, sets session cookies
+→ Frontend merges guest cart/wishlist, closes modal, emits auth:login (cross-tab)
 
-Resend OTP
-POST /auth/resend-otp { email }
-  → require pending registration
-  → generate new OTP
-  → reset otp:{email} and pending-registration:{email} TTLs to 300s
-  → queue send-otp job
+Sign Out
+→ authClient.signOut()
+→ Browser POST /api/auth/logout → proxy → NestJS
+→ Frontend clears auth store, emits auth:logout (cross-tab)
 
-Login
-POST /auth/login { email, password }
-  → reject unverified users
-  → compare password with bcryptjs
-  → delete existing refresh tokens
-  → sign/store new refresh token
-  → set cookies
-  → frontend merges guest cart and guest wishlist on success
+Session Resolution
+→ authClient.useSession()
+→ Returns { data: session | null, isPending }
+→ AuthProvider sets user from session.data.user
 
 Forgot Password
-POST /auth/forgot-password { email }
-  → generate 4-digit OTP
-  → store reset:{email} in Redis (300s)
-  → queue send-reset-otp job
-
-Verify Reset OTP
-POST /auth/verify-reset-otp { email, otp }
-  → validate reset OTP
-  → delete reset:{email}
-  → store reset-grant:{email} = '1' (600s)
+→ authClient.forgetPassword({ email, redirectTo: `${origin}/?auth=reset-password` })
+→ Better Auth queues reset-password email with token link
 
 Reset Password
-POST /auth/reset-password { email, password }
-  → validate reset grant
-  → hash and update password
-  → delete reset-grant:{email}
-  → delete all refresh tokens
+→ User lands on /?auth=reset-password&token=...
+→ AuthProvider stores token in Zustand, opens reset modal
+→ authClient.resetPassword({ newPassword, token })
+→ Better Auth updates password, invalidates sessions
 ```
-
-### JWT strategy
-```ts
-{ userId: string, email: string, role: string }
-```
-Access token is extracted from the `access_token` httpOnly cookie and verified against `JWT_ACCESS_SECRET`.
 
 ### Guards
+Better Auth provides session data via the request object. A global `BetterAuthGuard` reads `session.user` and attaches it to the request. `RolesGuard` checks `session.user.role` against `@Roles()`.
+
 | Guard | File | Purpose |
 |---|---|---|
-| `JwtAuthGuard` | `auth/guards/jwt-auth.guard.ts` | Verifies access token, populates `req.user` |
+| `BetterAuthGuard` | `auth/guards/better-auth.guard.ts` | Reads session, populates `req.user` |
 | `RolesGuard` | `auth/guards/roles.guard.ts` | Checks `req.user.role` against `@Roles()` |
 
+The `@AllowAnonymous()` decorator exempts public endpoints from auth.
+
 ### Cookie security
-Tokens are stored as httpOnly cookies and are never accessible via JavaScript.
+Session cookies are httpOnly + secure (in production). Better Auth rotates session tokens and provides built-in CSRF protection.
+
+### Email verification & password reset
+Verification and reset emails use **token-based links** (not OTPs). The emails are sent via BullMQ jobs (`send-verification-email`, `send-reset-password`) → Nodemailer → Gmail SMTP.
+
+### Cross-tab sync
+Auth state changes are broadcast to other browser tabs via:
+1. `BroadcastChannel` ('auth:login' / 'auth:logout') — primary mechanism
+2. `localStorage` `storage` event — fallback for Safari/third-party contexts
 
 ## 8. Cart Architecture
 ### Dual cart strategy
@@ -555,7 +566,7 @@ navbar badge, product card, cart page
 | Backend getCart write-back | `cart.service.ts` | Caps and persists current stock |
 
 ### Merge on login
-`useLogin` reads guest items, posts to `POST /cart/merge`, clears localStorage + Zustand, invalidates `['cart']`.
+`useAuth().login` reads guest items, posts to `POST /cart/merge`, clears localStorage + Zustand, invalidates `['cart']`.
 
 ### `validate-guest`
 `POST /cart/validate-guest` returns current stock for a list of productIds and is used by guest cart hydration.
@@ -585,7 +596,7 @@ navbar badge, wishlist page, cart items
 ```
 
 ### Merge on login
-`useLogin` reads `getGuestWishlist()`, extracts `p.id`, posts to `POST /wishlist/merge`, clears localStorage + Zustand, invalidates `['wishlist']`.
+`useAuth().login` reads `getGuestWishlist()`, extracts `p.id`, posts to `POST /wishlist/merge`, clears localStorage + Zustand, invalidates `['wishlist']`.
 
 ### `silent` toast param
 `useToggleWishlist(isAuthenticated, silent = false)` suppresses the built-in toast when `silent=true`, so callers can fire their own toast.
@@ -622,20 +633,21 @@ hydrateWishlist()
 4. Navbar badge updates immediately.
 
 ### Authenticated flow
-`AuthProvider` fires `GET /users/me`; if valid, `isAuthenticated` becomes `true`, `useCart` and `useWishlist` enable, and both fire their fetches with `staleTime: 0`.
+`authClient.useSession()` resolves the user. If valid, `isAuthenticated` becomes `true` → `useCart` and `useWishlist` in navbar become enabled → both fire their fetches → badges update. Both have `staleTime: 0`.
 
-### On login
+### On login transition
 1. `setUser` fires.
-2. Guest cart merges via `POST /cart/merge` and clears state.
-3. Guest wishlist merges via `POST /wishlist/merge` and clears state.
-4. Both caches refetch with merged DB data.
+2. Guest cart merges via `POST /cart/merge`.
+3. Guest wishlist merges via `POST /wishlist/merge`.
+4. LocalStorage + Zustand are cleared.
+5. `['cart']` and `['wishlist']` are invalidated.
 
 ## 11. Infrastructure & Environment Variables
 ### Services map
 | Service | Provider | Purpose |
 |---|---|---|
 | PostgreSQL | Neon | Primary database |
-| Redis | Upstash | OTP, pending registration, reset OTP, reset grant, caching, BullMQ |
+| Redis | Upstash | BullMQ queue, caching |
 | API hosting | Render | NestJS deployment |
 | Frontend hosting | Vercel | Next.js deployment |
 | Image storage | Cloudinary | Product image uploads |
@@ -649,10 +661,8 @@ NODE_ENV=development
 PORT=3333
 FRONTEND_URL=http://localhost:3000
 DATABASE_URL=postgresql://...neon.tech/neondb?sslmode=verify-full
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+BETTER_AUTH_SECRET=...
+BETTER_AUTH_URL=http://localhost:3333
 REDIS_URL=rediss://default:...@upstash.io:6379
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
@@ -664,6 +674,7 @@ MAIL_FROM=your-gmail@gmail.com
 ### `@theokallia/web/.env.local`
 ```env
 API_URL=http://localhost:3333
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ## 12. Deployment
@@ -693,8 +704,8 @@ CMD ["node", "/app/apps/api/dist/src/main"]
 ## 13. BullMQ Email Queue
 | Job Name | Data | Description |
 |---|---|---|
-| `send-otp` | `{ email, otp }` | OTP verification email |
-| `send-reset-otp` | `{ email, otp }` | Password reset email |
+| `send-verification-email` | `{ user, url }` | Email verification link |
+| `send-reset-password` | `{ user, url }` | Password reset link |
 | `send-order-confirmation` | TBD | Order confirmation (to be implemented) |
 
 Retry config: 3 retries with exponential backoff.

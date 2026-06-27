@@ -44,13 +44,13 @@
 
 ## 5. Core Features
 ### Auth (complete)
-- Endpoints: `POST /auth/register`, `/auth/verify-otp`, `/auth/resend-otp`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/forgot-password`, `/auth/verify-reset-otp`, `/auth/reset-password`.
-- Behavior: Redis-backed OTP and reset flows, JWT cookies, refresh token rotation, password reset invalidates sessions.
+- Auth is handled by Better Auth (same-origin client at `/api/auth`, NestJS server integration).
+- Flows: email/password signup, email/password signin, email verification links, password reset links, session cookies, cross-tab sync.
 - Status: complete.
 
 ### Users (complete)
 - Endpoints: `GET /users/me`, `PATCH /users/me`.
-- Behavior: current user read/update via `JwtAuthGuard`.
+- Behavior: current user read/update via `BetterAuthGuard`.
 - Status: complete.
 
 ### Categories (complete)
@@ -128,17 +128,14 @@
 | Backend | NestJS |
 | ORM | Prisma v7 |
 | Database | Neon PostgreSQL |
-| Auth | Custom NestJS Auth |
+| Auth | Better Auth |
 | Auth sessions | httpOnly cookies |
-| Password hashing | bcryptjs |
-| OTP storage | Upstash Redis |
 | Email queue | BullMQ + Upstash Redis |
 | Email sender | Nodemailer |
 | Guest cart | Zustand + localStorage |
 | Guest wishlist | Zustand + localStorage |
 | Caching | Upstash Redis |
-| Rate limiting | `@nestjs/throttler` |
-| Validation | `class-validator` + `class-transformer` |
+| Rate limiting | Upstash Ratelimit (planned) |
 | Deployment | Render |
 | Google OAuth | Deferred |
 | Payments | Paystack |
@@ -177,8 +174,8 @@ Deployment topology: API on Render, frontend on Vercel, database on Neon Postgre
 
 ## 11. Non-Negotiables
 ### Technical
-- All controllers behind auth use `@UseGuards(JwtAuthGuard)` per-method if any endpoint in the controller is public; use class-level guard if all endpoints require auth.
-- `req.user` is `{ userId, email, role }`; use `userId` to look up `User`.
+- Auth is enforced by Better Auth (global guard reads `session.user`).
+- `req.user` is `{ id, email, role }` from the Better Auth session; use `id` to look up `User`.
 - Admin routes use `@UseGuards(RolesGuard)` + `@Roles('admin')`.
 - All DTOs use `class-validator` decorators.
 - `confirmPassword` never appears in a DTO; frontend-only via Zod.

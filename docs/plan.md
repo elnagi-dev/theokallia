@@ -4,7 +4,7 @@ This document is the authoritative reference for the current build state and fut
 ## 1. Current Build State
 | Feature | Status | Source Verification |
 |---|---|---|
-| Auth module | Complete, 9 endpoints | `@theokallia/api/src/auth/`, Section 4 |
+| Auth module | Complete (Better Auth, email-link verification) | `@theokallia/api/src/auth/`, Section 4 |
 | Users module | Complete, 2 endpoints | `@theokallia/api/src/users/`, Section 5 |
 | Categories module | Complete, 8 endpoints, seeded | `@theokallia/api/src/categories/`, Section 19 |
 | Products module | Complete, 6 endpoints, 12 seeded | `@theokallia/api/src/products/`, Section 20 |
@@ -58,13 +58,13 @@ This document is the authoritative reference for the current build state and fut
 - Review submission form UI — deferred until profile/admin polish
 - Admin review block — `ForbiddenException` in `ReviewsService.create` + `userRole` param, deferred until review form is built
 - `ProductShipping` config endpoint — deferred until admin panel is built
-- Google OAuth — `passport-google-oauth20`, deferred
+- Google OAuth — deferred
 - Guest wishlist `validate-guest` endpoint — deferred unless stale `inStock` becomes a real user complaint
 - Buy Now on `product-info.tsx` — deferred until checkout page is built
 - Le Jour Serif commercial license — must be verified before launch
 
 ## 5. Known Technical Debt
-- No API rate limiting — `@nestjs/throttler` installed but not configured
+- No API rate limiting — Upstash Ratelimit planned
 - No Redis caching on `GET /products` — placeholder only
 - Mail still on Gmail SMTP — Resend switch deferred to production
 - No CI/CD pipeline
