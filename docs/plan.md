@@ -64,7 +64,7 @@ This document is the authoritative reference for the current build state and fut
 - Le Jour Serif commercial license — must be verified before launch
 
 ## 5. Known Technical Debt
-- No API rate limiting — Upstash Ratelimit planned
+- Basic API rate limiting implemented via Upstash (sliding window, 100 req/1m). Future improvement: Add comprehensive rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset) to support client-side throttling.
 - No Redis caching on `GET /products` — placeholder only
 - Mail still on Gmail SMTP — Resend switch deferred to production
 - No CI/CD pipeline

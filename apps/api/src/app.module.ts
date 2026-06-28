@@ -10,6 +10,7 @@ import { RedisModule } from './redis/redis.module'
 import { MailModule } from './mail/mail.module'
 import { CartModule } from './cart/cart.module'
 import { WishlistModule } from './wishlist/wishlist.module'
+import { RateLimitModule } from './rate-limit/rate-limit.module'
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth'
 import { auth } from './auth/auth'
 import * as Joi from 'joi'
@@ -51,6 +52,7 @@ import * as Joi from 'joi'
     ReviewsModule,
     CartModule,
     WishlistModule,
+    RateLimitModule,
   ],
 })
 export class AppModule {}
