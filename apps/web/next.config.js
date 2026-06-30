@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    viewTransition: true,
     images: {
         remotePatterns: [
             {

@@ -9,11 +9,14 @@ import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
 import CartItem from '@/components/cart/cart-item'
 import GuestCartItem from '@/components/cart/guest-cart-item'
 import { useEffect } from 'react'
+import { ViewTransition } from 'react'
+import { useRouter } from 'next/navigation'
 
 // delivery fee is a fixed global constant — will move to a config endpoint when admin panel is built
 const DELIVERY_FEE = 10000
 
 export default function CartPage() {
+  const router = useRouter()
   const { isAuthenticated, openAuthModal, setRedirectTo } = useAuthStore()
 
   // authenticated cart — only fetches when user is logged in
@@ -52,7 +55,8 @@ export default function CartPage() {
       openAuthModal('login')
       return
     }
-    // TODO: navigate to checkout page
+    
+    router.push('/checkout')
   }
 
   // show loading state while DB cart is fetching — guests never hit this since Zustand is synchronous
@@ -96,96 +100,102 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white px-20 pt-10">
-      {/* header */}
-      <div className="mb-12 flex items-baseline gap-4">
-        <h1 className="font-le-jour text-6xl tracking-wide uppercase">
-          Shopping Bag
-        </h1>
-        <span className="font-le-jour text-lg tracking-widest uppercase">
-          ({items.length} {items.length === 1 ? 'Item' : 'Items'})
-        </span>
-      </div>
-
-      <div className="flex items-start gap-16">
-        {/* cart items — authenticated renders CartItem, guest renders GuestCartItem */}
-        <div className="flex flex-1 flex-col gap-4">
-          {isAuthenticated
-            ? dbCart?.items.map((item) => (
-                <CartItem
-                  key={item.id}
-                  item={item}
-                  onUpdate={(quantity) =>
-                    updateItem({ itemId: item.id, quantity })
-                  }
-                />
-              ))
-            : guestItems.map((item) => (
-                <GuestCartItem
-                  key={item.productId}
-                  item={item}
-                  onUpdate={(quantity) =>
-                    updateGuestItem(item.productId, quantity)
-                  }
-                  onRemove={() => removeGuestItem(item.productId)}
-                />
-              ))}
+    <ViewTransition>
+      <div className="min-h-screen w-full bg-white px-20 pt-10">
+        {/* header */}
+        <div className="mb-12 flex items-baseline gap-4">
+          <h1 className="font-le-jour text-6xl tracking-wide uppercase">
+            Shopping Bag
+          </h1>
+          <span className="font-le-jour text-lg tracking-widest uppercase">
+            ({items.length} {items.length === 1 ? 'Item' : 'Items'})
+          </span>
         </div>
 
-        {/* order summary */}
-        <div className="w-md shrink-0">
-          <div className="flex flex-col gap-6 border border-gray-200 p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="font-le-jour text-2xl tracking-wide uppercase">
-                Subtotal
-              </h2>
-              <span className="text-2xl font-medium">
-                ₦{subtotal.toLocaleString()}.00
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>Delivery fee</span>
-              <span>₦{DELIVERY_FEE.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm font-medium">
-              <span>Total</span>
-              <span>₦{orderTotal.toLocaleString()}.00</span>
-            </div>
-            <div className="flex flex-col gap-3 text-sm text-gray-700">
-              <div className="flex items-center gap-3">
-                <Shield size={16} />
-                <span>Secured payment</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Package size={16} />
-                <span>Free Packaging</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Truck size={16} />
-                <span>Fast delivery (3-5 days)</span>
-              </div>
-            </div>
-            <button
-              onClick={handleCheckout}
-              className="w-full py-3 text-sm tracking-widest text-white uppercase transition-colors hover:bg-purple-700"
-              style={{ background: 'var(--color-primary)' }}
-            >
-              {isAuthenticated ? 'Proceed to Checkout' : 'Sign in to Checkout'}
-            </button>
+        <div className="flex items-start gap-16">
+          {/* cart items — authenticated renders CartItem, guest renders GuestCartItem */}
+          <div className="flex flex-1 flex-col gap-4">
+            {isAuthenticated
+              ? dbCart?.items.map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onUpdate={(quantity) =>
+                      updateItem({ itemId: item.id, quantity })
+                    }
+                  />
+                ))
+              : guestItems.map((item) => (
+                  <GuestCartItem
+                    key={item.productId}
+                    item={item}
+                    onUpdate={(quantity) =>
+                      updateGuestItem(item.productId, quantity)
+                    }
+                    onRemove={() => removeGuestItem(item.productId)}
+                  />
+                ))
+            }
           </div>
+
+          {/* order summary */}
+          <ViewTransition name="order-summary">
+            <div className="w-md shrink-0">
+              <div className="flex flex-col gap-6 border border-gray-200 p-8">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-le-jour text-2xl tracking-wide uppercase">
+                    Subtotal
+                  </h2>
+                  <span className="text-2xl font-medium">
+                    ₦{subtotal.toLocaleString()}.00
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Delivery fee</span>
+                  <span>₦{DELIVERY_FEE.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-sm font-medium">
+                  <span>Total</span>
+                  <span>₦{orderTotal.toLocaleString()}.00</span>
+                </div>
+                <div className="flex flex-col gap-3 text-sm text-gray-700">
+                  <div className="flex items-center gap-3">
+                    <Shield size={16} />
+                    <span>Secured payment</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Package size={16} />
+                    <span>Free Packaging</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Truck size={16} />
+                    <span>Fast delivery (3-5 days)</span>
+                  </div>
+                </div>
+                 <button
+                  onClick={handleCheckout}
+                  className="w-full cursor-pointer py-3 text-sm tracking-widest text-white uppercase transition-colors hover:bg-purple-700"
+                  style={{ background: 'var(--color-primary)' }}
+                >
+                  {isAuthenticated ? 'Proceed to Checkout' : 'Sign in to Checkout'}
+                </button>
+
+              </div>
+            </div>
+          </ViewTransition>
+        </div>
+
+        {/* back to shop */}
+        <div className="mt-16 mb-10">
+          <Link
+            href="/shop"
+            className="flex items-center gap-1 font-le-jour text-base tracking-widest uppercase"
+          >
+            <ChevronLeft size={24} />
+            Back to Shop
+          </Link>
         </div>
       </div>
-
-      {/* back to shop */}
-      <div className="mt-16 mb-10">
-        <Link
-          href="/shop"
-          className="flex items-center gap-1 font-le-jour text-base tracking-widest uppercase"
-        >
-          <ChevronLeft size={24} />
-          Back to Shop
-        </Link>
-      </div>
-    </div>
+    </ViewTransition>
   )
 }

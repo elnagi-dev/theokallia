@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
-import { useVerificationStatus } from '@/lib/hooks/use-auth'
+import { useEffect, useState } from 'react'
+import { useVerificationStatus, useResendVerification } from '@/lib/hooks/use-auth'
+import { Button } from '@/components/ui/button'
 
 interface CheckEmailProps {
   email: string
@@ -7,8 +8,12 @@ interface CheckEmailProps {
 }
 
 export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
-  // Poll the server until the email is verified on any device.
+  const [timer, setTimer] = useState(60)
+  const [isResending, setIsResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
+
   const { data } = useVerificationStatus(email)
+  const { mutate: resendEmail, isPending: isPendingResend } = useResendVerification()
 
   useEffect(() => {
     if (data?.verified) {
@@ -16,9 +21,32 @@ export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
     }
   }, [data?.verified, onVerified])
 
+  useEffect(() => {
+    if (timer <= 0) return
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [timer])
+
+  const handleResend = async () => {
+    setIsResending(true)
+    setResendSuccess(false)
+    try {
+      await resendEmail(email)
+      setResendSuccess(true)
+      setTimer(60)
+    } catch (error) {
+      console.error('Failed to resend verification email:', error)
+    } finally {
+      setIsResending(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center px-2 py-4">
-      {/* This state is informational only; the email link finishes verification. */}
       <div className="mb-6">
         <svg
           width="80"
@@ -52,10 +80,33 @@ export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
         className="mb-8 text-center text-sm leading-relaxed text-gray-500"
         style={{ fontFamily: 'var(--font-cormorant-garamond)' }}
       >
-        We sent you a verification link.
+        We sent you a verification link to <span className="font-medium text-gray-900">{email}</span>.
         <br />
         Open it to finish creating your account.
       </p>
+
+      <div className="flex flex-col items-center gap-3">
+        <button
+          type="button"
+          className={`text-xs transition-colors ${
+            timer > 0 || isPendingResend
+              ? 'cursor-not-allowed text-gray-400'
+              : 'text-purple-600 underline-offset-4 hover:text-purple-700 underline'
+          }`}
+          onClick={handleResend}
+          disabled={timer > 0 || isPendingResend}
+        >
+          {timer > 0 
+            ? `Resend link in ${timer}s` 
+            : isPendingResend ? 'Sending...' : 'Resend verification link'}
+        </button>
+        
+        {resendSuccess && (
+          <p className="text-xs text-green-600 font-medium">
+            Verification link sent successfully!
+          </p>
+        )}
+      </div>
     </div>
   )
 }

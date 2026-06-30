@@ -103,7 +103,28 @@ function toAuthSessionUser(user: AuthResponseUser) {
 // --- Hooks ---
 
 /**
+ * Resends the verification email to the user.
+ */
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const res = await authClient.sendVerificationEmail({
+        email,
+        callbackURL: verifiedCallbackURL,
+      })
+
+      if (res.error) {
+        throw new Error(res.error.message)
+      }
+
+      return res.data
+    },
+  })
+}
+
+/**
  * Creates a new user account and sends the verification email.
+
  * The caller should switch to the email confirmation screen.
  */
 export function useRegister() {

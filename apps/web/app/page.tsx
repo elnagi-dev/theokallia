@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ViewTransition } from 'react'
 import HeroSection from '@/components/homepage/hero-section'
 import ShopByCategory from '@/components/homepage/shop-by-category'
 import ShopPromotion from '@/components/homepage/shop-promotion'
@@ -10,16 +10,18 @@ import NewsLetter from '@/components/homepage/news-letter'
 
 const page = () => {
   return (
-    <div>
-      <HeroSection />
-      <ShopByCategory />
-      <ShopPromotion />
-      <WhyChooseUs />
-      <Reviews />
-      <Features />
-      <Banner />
-      <NewsLetter />
-    </div>
+    <ViewTransition>
+      <div>
+        <HeroSection />
+        <ShopByCategory />
+        <ShopPromotion />
+        <WhyChooseUs />
+        <Reviews />
+        <Features />
+        <Banner />
+        <NewsLetter />
+      </div>
+    </ViewTransition>
   )
 }
 

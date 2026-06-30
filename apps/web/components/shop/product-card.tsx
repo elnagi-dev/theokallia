@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useState } from 'react'
+import { ViewTransition } from 'react'
 import { Button } from '../ui/button'
 import { useAddToCart, useCart } from '@/lib/hooks/use-cart'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -128,13 +129,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
             />
           </button>
           {product.images[0] && (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover"
-            />
+            <ViewTransition name={product.slug}>
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover"
+              />
+            </ViewTransition>
           )}
         </div>
 
