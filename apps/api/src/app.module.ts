@@ -10,6 +10,8 @@ import { RedisModule } from './redis/redis.module'
 import { MailModule } from './mail/mail.module'
 import { CartModule } from './cart/cart.module'
 import { WishlistModule } from './wishlist/wishlist.module'
+import { OrdersModule } from './orders/orders.module'
+import { PaymentsModule } from './payments/payments.module'
 import { RateLimitModule } from './rate-limit/rate-limit.module'
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth'
 import { auth } from './auth/auth'
@@ -28,11 +30,9 @@ import * as Joi from 'joi'
         BETTER_AUTH_SECRET: Joi.string().required(),
         BETTER_AUTH_URL: Joi.string().required(),
         REDIS_URL: Joi.string().required(),
-        MAIL_HOST: Joi.string().required(),
-        MAIL_PORT: Joi.number().required(),
-        MAIL_USER: Joi.string().required(),
-        MAIL_PASS: Joi.string().required(),
         MAIL_FROM: Joi.string().required(),
+        PAYSTACK_SECRET_KEY: Joi.string().required(),
+        PAYSTACK_PUBLIC_KEY: Joi.string().required(),
       }),
     }),
     // Register BullMQ globally — all queues use this Redis connection
@@ -52,6 +52,8 @@ import * as Joi from 'joi'
     ReviewsModule,
     CartModule,
     WishlistModule,
+    OrdersModule,
+    PaymentsModule,
     RateLimitModule,
   ],
 })

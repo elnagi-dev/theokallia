@@ -12,7 +12,10 @@ const prisma = new PrismaClient({
 
 // Mail queue — mirrors the BullMQ queue in MailModule
 const mailQueue = new Queue('mail', {
-  connection: { url: process.env.REDIS_URL },
+  connection: { 
+    url: process.env.REDIS_URL,
+    tls: {},
+  },
 })
 
 export const auth = betterAuth({
@@ -29,14 +32,24 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     minPasswordLength: 8,
     sendResetPassword: async ({ user, url }) => {
-      void mailQueue.add('send-reset-password', { email: user.email, url })
+      try {
+        await mailQueue.add('send-reset-password', { email: user.email, url })
+        console.log(`[Auth] Successfully queued reset password email for ${user.email}`)
+      } catch (err) {
+        console.error(`[Auth] Failed to queue reset password email for ${user.email}:`, err)
+      }
     },
   },
 
   emailVerification: {
     sendOnSignUp: true,
     sendVerificationEmail: async ({ user, url }) => {
-      void mailQueue.add('send-verification-email', { email: user.email, url })
+      try {
+        await mailQueue.add('send-verification-email', { email: user.email, url })
+        console.log(`[Auth] Successfully queued verification email for ${user.email}`)
+      } catch (err) {
+        console.error(`[Auth] Failed to queue verification email for ${user.email}:`, err)
+      }
     },
   },
 

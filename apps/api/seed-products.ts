@@ -1,26 +1,19 @@
-const BASE_URL = process.env.SEED_API_URL
-const ACCESS_TOKEN = process.env.SEED_ACCESS_TOKEN
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import 'dotenv/config'
 
-if (!BASE_URL || !ACCESS_TOKEN) {
-  console.error('Missing SEED_API_URL or SEED_ACCESS_TOKEN in environment')
-  process.exit(1)
-}
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+})
 
-const headers = {
-  'Content-Type': 'application/json',
-  Cookie: `access_token=${ACCESS_TOKEN}`,
-}
-
-// Products
-// Uses categorySlug + subcategorySlug (strings) — matches your DTO
+const prisma = new PrismaClient({ adapter })
 
 const products = [
   // RINGS
   {
     name: 'Adaeze',
     slug: 'adaeze-gold-ring',
-    description:
-      'A timeless 18k gold ring adorned with a delicate floral motif. Handcrafted to perfection, the Adaeze ring is a symbol of grace and femininity, ideal for everyday elegance or special occasions.',
+    description: 'A timeless 18k gold ring adorned with a delicate floral motif. Handcrafted to perfection, the Adaeze ring is a symbol of grace and femininity, ideal for everyday elegance or special occasions.',
     price: 45000,
     images: [
       'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800',
@@ -36,8 +29,7 @@ const products = [
   {
     name: 'Zara',
     slug: 'zara-diamond-ring',
-    description:
-      'A breathtaking diamond solitaire set in lustrous white gold. The Zara ring captures light from every angle, making it the ultimate statement piece for engagements, anniversaries, or simply celebrating yourself.',
+    description: 'A breathtaking diamond solitaire set in lustrous white gold. The Zara ring captures light from every angle, making it the ultimate statement piece for engagements, anniversaries, or simply celebrating yourself.',
     price: 120000,
     images: [
       'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800',
@@ -53,8 +45,7 @@ const products = [
   {
     name: 'Emeka',
     slug: 'emeka-silver-ring',
-    description:
-      'A sleek, minimalist sterling silver band with a brushed finish. The Emeka ring speaks to understated luxury — clean lines, cool tones, and effortless versatility for the modern woman.',
+    description: 'A sleek, minimalist sterling silver band with a brushed finish. The Emeka ring speaks to understated luxury — clean lines, cool tones, and effortless versatility for the modern woman.',
     price: 18000,
     images: [
       'https://images.unsplash.com/photo-1589674781759-c21c37956a44?w=800',
@@ -67,13 +58,11 @@ const products = [
     categorySlug: 'rings',
     subcategorySlug: 'silver-rings',
   },
-
   // BRACELETS
   {
     name: 'Temi',
     slug: 'temi-gold-bracelet',
-    description:
-      'A luxurious 18k gold chain bracelet featuring an intricate link pattern inspired by West African textile designs. The Temi bracelet drapes beautifully on the wrist, catching light with every movement.',
+    description: 'A luxurious 18k gold chain bracelet featuring an intricate link pattern inspired by West African textile designs. The Temi bracelet drapes beautifully on the wrist, catching light with every movement.',
     price: 55000,
     images: [
       'https://images.unsplash.com/photo-1573408301185-9519f94804f3?w=800',
@@ -89,8 +78,7 @@ const products = [
   {
     name: 'Chisom',
     slug: 'chisom-charm-bracelet',
-    description:
-      'A playful yet refined charm bracelet featuring hand-selected gold and enamel charms. Each charm on the Chisom bracelet tells a story — wear your journey on your wrist.',
+    description: 'A playful yet refined charm bracelet featuring hand-selected gold and enamel charms. Each charm on the Chisom bracelet tells a story — wear your journey on your wrist.',
     price: 38000,
     images: [
       'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800',
@@ -106,8 +94,7 @@ const products = [
   {
     name: 'Nkechi',
     slug: 'nkechi-silver-bracelet',
-    description:
-      'A delicate sterling silver tennis bracelet set with sparkling cubic zirconia stones. The Nkechi bracelet offers diamond-like brilliance at an accessible price point, perfect as a gift or personal treat.',
+    description: 'A delicate sterling silver tennis bracelet set with sparkling cubic zirconia stones. The Nkechi bracelet offers diamond-like brilliance at an accessible price point, perfect as a gift or personal treat.',
     price: 25000,
     images: [
       'https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=800',
@@ -120,13 +107,11 @@ const products = [
     categorySlug: 'bracelets',
     subcategorySlug: 'silver-bracelets',
   },
-
   // NECKLACES
   {
     name: 'Amara',
     slug: 'amara-gold-necklace',
-    description:
-      'A stunning 18k gold layered necklace with a dainty adjustable chain. The Amara necklace sits beautifully at the collarbone, adding warmth and radiance to any neckline — day or evening.',
+    description: 'A stunning 18k gold layered necklace with a dainty adjustable chain. The Amara necklace sits beautifully at the collarbone, adding warmth and radiance to any neckline — day or evening.',
     price: 62000,
     images: [
       'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800',
@@ -142,8 +127,7 @@ const products = [
   {
     name: 'Obiageli',
     slug: 'obiageli-pendant-necklace',
-    description:
-      'A bold teardrop pendant necklace in 18k rose gold, set with a single cushion-cut amethyst. The Obiageli necklace is a conversation starter — a wearable work of art for the woman who commands attention.',
+    description: 'A bold teardrop pendant necklace in 18k rose gold, set with a single cushion-cut amethyst. The Obiageli necklace is a conversation starter — a wearable work of art for the woman who commands attention.',
     price: 85000,
     images: [
       'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=800',
@@ -159,8 +143,7 @@ const products = [
   {
     name: 'Sade',
     slug: 'sade-silver-necklace',
-    description:
-      'A refined herringbone chain necklace in polished sterling silver. The Sade necklace is minimal, architectural, and endlessly elegant — the kind of piece you wear every single day.',
+    description: 'A refined herringbone chain necklace in polished sterling silver. The Sade necklace is minimal, architectural, and endlessly elegant — the kind of piece you wear every single day.',
     price: 22000,
     images: [
       'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=800',
@@ -173,13 +156,11 @@ const products = [
     categorySlug: 'necklaces',
     subcategorySlug: 'silver-necklaces',
   },
-
   // EARRINGS
   {
     name: 'Ife',
     slug: 'ife-gold-earrings',
-    description:
-      'Sculptural 18k gold drop earrings inspired by ancient Ife bronze art. Lightweight yet striking, the Ife earrings frame the face beautifully and celebrate the depth of African heritage through fine jewellery.',
+    description: 'Sculptural 18k gold drop earrings inspired by ancient Ife bronze art. Lightweight yet striking, the Ife earrings frame the face beautifully and celebrate the depth of African heritage through fine jewellery.',
     price: 42000,
     images: [
       'https://images.unsplash.com/photo-1608042314453-ae338d682c93?w=800',
@@ -195,8 +176,7 @@ const products = [
   {
     name: 'Folake',
     slug: 'folake-hoop-earrings',
-    description:
-      'Classic oversized hoop earrings in polished 18k gold vermeil. The Folake hoops are the ultimate wardrobe staple — bold enough to stand alone, versatile enough to complement any look.',
+    description: 'Classic oversized hoop earrings in polished 18k gold vermeil. The Folake hoops are the ultimate wardrobe staple — bold enough to stand alone, versatile enough to complement any look.',
     price: 30000,
     images: [
       'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?w=800',
@@ -212,8 +192,7 @@ const products = [
   {
     name: 'Ngozi',
     slug: 'ngozi-silver-earrings',
-    description:
-      'Geometric sterling silver stud earrings with a hammered texture finish. The Ngozi studs are small in size but rich in character — the perfect everyday earring for a woman with refined taste.',
+    description: 'Geometric sterling silver stud earrings with a hammered texture finish. The Ngozi studs are small in size but rich in character — the perfect everyday earring for a woman with refined taste.',
     price: 15000,
     images: [
       'https://images.unsplash.com/photo-1615655406736-b37892f2a21c?w=800',
@@ -228,39 +207,44 @@ const products = [
   },
 ]
 
-// Seed
-
 async function main() {
-  console.log(`\nSeeding ${products.length} products...\n`)
-  let success = 0
-  let failed = 0
+  console.log('\n🚀 Seeding products...')
 
   for (const product of products) {
-    const res = await fetch(`${BASE_URL}/products`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(product),
-    })
+    const category = await prisma.category.findUnique({ where: { slug: product.categorySlug } })
+    const subcategory = await prisma.subcategory.findUnique({ where: { slug: product.subcategorySlug } })
 
-    const data = await res.json()
-
-    if (res.ok) {
-      console.log(`✅ Created: ${product.name} (${product.slug})`)
-      success++
-    } else {
-      console.error(
-        `❌ Failed:  ${product.name} — ${JSON.stringify(data?.message ?? data)}`,
-      )
-      failed++
+    if (!category || !subcategory) {
+      console.error(`❌ Missing category/subcategory for ${product.name}`)
+      continue
     }
+
+    await prisma.product.upsert({
+      where: { slug: product.slug },
+      update: {},
+      create: {
+        name: product.name,
+        slug: product.slug,
+        description: product.description,
+        price: product.price,
+        images: product.images,
+        inStock: product.inStock,
+        stock: product.stock,
+        categoryId: category.id,
+        subcategoryId: subcategory.id,
+      },
+    })
+    console.log(`✅ Product: ${product.name}`)
   }
 
-  console.log(`\nDone. ${success} created, ${failed} failed.`)
+  console.log('\n✨ Product seeding complete!')
 }
 
-main().catch((err) => {
-  console.error('Unexpected error:', err)
-  process.exit(1)
-})
-
-export {}
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

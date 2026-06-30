@@ -8,7 +8,7 @@ import cookieParser from 'cookie-parser'
 
 async function bootstrap() {
   // bodyParser must be disabled at app creation — Better Auth handles its own body parsing
-  const app = await NestFactory.create(AppModule, { bodyParser: false })
+  const app = await NestFactory.create(AppModule, { bodyParser: false, rawBody: true })
 
   // Security headers
   app.use(helmet())

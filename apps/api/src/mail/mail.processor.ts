@@ -1,31 +1,28 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
-import { ConfigService } from '@nestjs/config'
 import { Logger } from '@nestjs/common'
-import * as nodemailer from 'nodemailer'
+import { MailService } from './mail.service'
 
 interface LinkJobData {
   email: string
   url: string
 }
 
+interface OrderConfirmationJobData {
+  email: string
+  orderId: string
+  total: number
+  items: { name: string; quantity: number }[]
+}
+
 // Processes all jobs on the 'mail' queue
 // BullMQ automatically retries failed jobs with backoff
 @Processor('mail')
 export class MailProcessor extends WorkerHost {
-  private transporter: nodemailer.Transporter
   private readonly logger = new Logger(MailProcessor.name)
 
-  constructor(private config: ConfigService) {
+  constructor(private mailService: MailService) {
     super()
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get<string>('MAIL_HOST'),
-      port: this.config.get<number>('MAIL_PORT'),
-      auth: {
-        user: this.config.get<string>('MAIL_USER'),
-        pass: this.config.get<string>('MAIL_PASS'),
-      },
-    })
   }
 
   async process(job: Job): Promise<void> {
@@ -37,6 +34,9 @@ export class MailProcessor extends WorkerHost {
             break
           case 'send-reset-password':
             await this.handleSendResetPassword(job as Job<LinkJobData>)
+            break
+          case 'send-order-confirmation':
+            await this.handleSendOrderConfirmation(job as Job<OrderConfirmationJobData>)
             break
           default:
             throw new Error(`Unknown job name: ${job.name}`)
@@ -51,8 +51,7 @@ export class MailProcessor extends WorkerHost {
   private async handleSendVerificationEmail(
     job: Job<LinkJobData>,
   ): Promise<void> {
-    await this.transporter.sendMail({
-      from: this.config.get<string>('MAIL_FROM'),
+    await this.mailService.sendEmail({
       to: job.data.email,
       subject: 'Verify your Theokallia email',
       html: `
@@ -68,8 +67,7 @@ export class MailProcessor extends WorkerHost {
   }
 
   private async handleSendResetPassword(job: Job<LinkJobData>): Promise<void> {
-    await this.transporter.sendMail({
-      from: this.config.get<string>('MAIL_FROM'),
+    await this.mailService.sendEmail({
       to: job.data.email,
       subject: 'Reset your Theokallia password',
       html: `
@@ -79,6 +77,28 @@ export class MailProcessor extends WorkerHost {
           <a href="${job.data.url}" style="color: #7E22CE;">Reset my password</a>
           <p>This link expires in 1 hour.</p>
           <p>If you did not request this, you can safely ignore this email.</p>
+        </div>
+      `,
+    })
+  }
+
+  private async handleSendOrderConfirmation(job: Job<OrderConfirmationJobData>): Promise<void> {
+    const itemsList = job.data.items
+      .map((item) => `<li>${item.quantity}x ${item.name}</li>`)
+      .join('')
+
+    await this.mailService.sendEmail({
+      to: job.data.email,
+      subject: 'Order Confirmed - THEOKALLIA',
+      html: `
+        <div style="font-family: serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="letter-spacing: 0.2em;">THEOKALLIA</h2>
+          <p>Thank you for your order! We have received your payment and are preparing your pieces.</p>
+          <p><strong>Order ID:</strong> ${job.data.orderId}</p>
+          <p><strong>Total:</strong> ${job.data.total}</p>
+          <p><strong>Items:</strong></p>
+          <ul>${itemsList}</ul>
+          <p>We will notify you once your order has been shipped.</p>
         </div>
       `,
     })

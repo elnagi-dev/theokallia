@@ -138,8 +138,19 @@ model Order {
   status    String      @default("pending") // pending | paid | shipped | delivered | cancelled
   total     Float
   items     OrderItem[]
+  reservations StockReservation[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+}
+
+model StockReservation {
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  productId String
+  quantity  Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model OrderItem {
