@@ -9,6 +9,8 @@ services:
       - "3333:3333"
     env_file:
       - .env.docker
+    volumes:
+      - ./.env.docker:/app/apps/api/.env
 
   web:
     build:
