@@ -19,6 +19,7 @@
 13. [BullMQ Email Queue](#13-bullmq-email-queue)
 14. [Filter, Sort & Pagination](#14-filter-sort--pagination)
 15. [Shop & Product Page Architecture](#15-shop--product-page-architecture)
+16. [Containerization](#16-containerization)
 
 ## 1. System Overview
 Theokallia is a full-stack luxury jewellery e-commerce platform with three surfaces: `theokallia.com`, `api.theokallia.com`, and `apps/admin`.
@@ -29,7 +30,7 @@ Browser
   → catch-all proxy `apps/web/app/api/[...path]/route.ts`
   → NestJS REST API (`/v1/...`)
   → Neon PostgreSQL / Upstash Redis
-  → BullMQ mail queue → Nodemailer
+  → BullMQ mail queue → Resend
 ```
 
 Architecture principles from the README:
@@ -48,6 +49,7 @@ Architecture principles from the README:
 apps/
 ├── api/
 │   ├── Dockerfile
+│   ├── .dockerignore
 │   ├── prisma/
 │   │   └── schema.prisma
 │   └── src/
@@ -64,6 +66,7 @@ apps/
 │       ├── redis/
 │       └── mail/
 ├── web/
+│   ├── Dockerfile
 │   ├── app/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
@@ -119,12 +122,12 @@ packages/
 | Auth | Better Auth |
 | Auth sessions | httpOnly cookies |
 | Email queue | BullMQ + Upstash Redis |
-| Email sender | Nodemailer |
+| Email sender | Resend |
 | Guest cart | Zustand + localStorage |
 | Guest wishlist | Zustand + localStorage |
 | Caching | Upstash Redis |
-| Rate limiting | Upstash Ratelimit (planned) |
-| Deployment | Render |
+| Rate limiting | Upstash Ratelimit |
+| Deployment | Render / Vercel |
 | Google OAuth | Deferred |
 | Payments | Paystack |
 | File storage | Cloudinary |
@@ -260,8 +263,19 @@ model Order {
   status    String      @default("pending")
   total     Float
   items     OrderItem[]
+  reservations StockReservation[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+}
+
+model StockReservation {
+  id        String   @id @default(cuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  productId String
+  quantity  Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model OrderItem {
@@ -651,8 +665,7 @@ hydrateWishlist()
 | API hosting | Render | NestJS deployment |
 | Frontend hosting | Vercel | Next.js deployment |
 | Image storage | Cloudinary | Product image uploads |
-| Email (dev) | Gmail SMTP / Nodemailer | Development mail |
-| Email (production) | Resend | Production mail (deferred) |
+| Email | Resend | Professional mail system |
 | Payments | Paystack | Nigerian payment processor |
 
 ### `@theokallia/api/.env`
@@ -669,6 +682,10 @@ MAIL_PORT=587
 MAIL_USER=your-gmail@gmail.com
 MAIL_PASS=your-16-char-app-password
 MAIL_FROM=your-gmail@gmail.com
+MAIL_PROVIDER=resend
+RESEND_API_KEY=...
+PAYSTACK_SECRET_KEY=...
+PAYSTACK_PUBLIC_KEY=...
 ```
 
 ### `@theokallia/web/.env.local`
@@ -679,38 +696,23 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## 12. Deployment
 ### Render Dockerfile
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-RUN npm install -g pnpm
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/api/package.json ./apps/api/
-COPY packages/types/package.json ./packages/types/
-COPY packages/typescript-config/package.json ./packages/typescript-config/
-RUN pnpm install --frozen-lockfile
-COPY . .
-WORKDIR /app/apps/api
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-RUN pnpm build
-EXPOSE 3333
-CMD ["node", "/app/apps/api/dist/src/main"]
-```
+The API is deployed as a Docker container. It uses a multi-stage build to keep the production image lean (no dev dependencies).
+- **Context**: Repository Root
+- **Dockerfile**: `apps/api/Dockerfile`
 
 ### Vercel frontend setup
-- `API_URL` is set in the Vercel dashboard.
-- It is server-side only and has no `NEXT_PUBLIC_` prefix.
+The frontend is deployed using Next.js standalone output for optimized performance.
+- **Root Directory**: `apps/web`
+- **Build Command**: `pnpm build`
 
 ## 13. BullMQ Email Queue
 | Job Name | Data | Description |
 |---|---|---|
 | `send-verification-email` | `{ user, url }` | Email verification link |
 | `send-reset-password` | `{ user, url }` | Password reset link |
-| `send-order-confirmation` | TBD | Order confirmation (to be implemented) |
+| `send-order-confirmation` | TBD | Order confirmation (implemented) |
 
 Retry config: 3 retries with exponential backoff.
-
-Planned: `send-order-confirmation` remains to be implemented.
 
 ## 14. Filter, Sort & Pagination
 | Param | Type | Default | Description |
@@ -740,3 +742,23 @@ shop/[slug]/page.tsx ('use client')
   │   └── if reviewCount === 0: empty state
   └── SimilarProducts(slug) → slug as prop, not useParams()
 ```
+
+## 16. Containerization
+The project uses a Docker-based orchestration strategy for local development and production consistency.
+
+### API Dockerization
+Uses a multi-stage build:
+1. **Base**: Installs pnpm.
+2. **Build**: Installs all dependencies and compiles TypeScript.
+3. **Runner**: Installs only production dependencies and copies the `dist` folder.
+- **Security**: Runs as a non-root user (`nodeuser`).
+- **Prisma**: The Prisma Client is generated during the build stage and persisted in the final image.
+
+### Web Dockerization
+Uses a multi-stage build leveraging Next.js `standalone` output:
+- **Build**: Compiles the Next.js app.
+- **Runner**: Copies only the `.next/standalone` folder, static assets, and public files.
+- **Efficiency**: Resulting image is significantly smaller and faster to boot.
+
+### Docker Compose
+A `docker-compose.yml` file allows starting the full stack locally. It manages the API and Web containers and connects them to external cloud services (Neon PostgreSQL and Upstash Redis) via a dedicated `.env.docker` file.

@@ -11,8 +11,8 @@ This document is the authoritative reference for the current build state and fut
 | Reviews module | Complete, 4 endpoints | `@theokallia/api/src/reviews/`, Section 21 |
 | Cart module | Complete, 7 endpoints | `@theokallia/api/src/cart/`, Section 11 |
 | Wishlist module | Complete, 4 endpoints | `@theokallia/api/src/wishlist/`, Section 12 |
-| Orders module | Not started | `@theokallia/api/src/orders/`, Section 29 |
-| Payments module | Not started | `@theokallia/api/src/payments/`, Section 29 |
+| Orders module | Complete | `@theokallia/api/src/orders/`, Section 29 |
+| Payments module | Complete | `@theokallia/api/src/payments/`, Section 29 |
 | Upload module | Not started | `@theokallia/api/src/upload/`, Section 29 |
 | PrismaService | `@Global()`, `.client` getter | `@theokallia/api/src/prisma/`, Section 27 |
 | RedisService | `@Global()` | `@theokallia/api/src/redis/`, Section 27 |
@@ -28,12 +28,12 @@ This document is the authoritative reference for the current build state and fut
 | Hooks | `use-auth`, `use-cart`, `use-wishlist`, `use-products`, `use-reviews`, `use-categories`, `use-profile` | `@theokallia/web/lib/hooks/`, Section 15 |
 | Stores | `auth-store`, `guest-cart-store`, `guest-wishlist-store` | `@theokallia/web/lib/stores/`, Sections 15 and 16 |
 | Admin dashboard | Not started | `apps/admin/`, Sections 4 and 29 |
-| Render deployment | API deployed | Section 13 |
+| Render deployment | API deployed via Docker | Section 13 |
 | Vercel deployment | Frontend hosted | Section 13 |
 | Neon PostgreSQL | Active | Sections 2, 3, 13 |
 | Upstash Redis | Active | Sections 2, 3, 13 |
 | CI/CD pipeline | Not started | Section 29 |
-| Switch mail to Resend | Not started | Section 29 |
+| Switch mail to Resend | Complete | Section 29 |
 | Turborepo Remote Caching | Not started | Section 29 |
 
 ## 2. Phase Completion Status
@@ -41,18 +41,14 @@ This document is the authoritative reference for the current build state and fut
 |---|---|---|---|
 | Phase 1 | Auth, users, categories, products, reviews | ✅ Done | None |
 | Phase 2 | Cart, wishlist | ✅ Done | None |
-| Phase 3 | Orders, payments | ❌ Not started | Full implementation |
-| Phase 4 | Upload, admin dashboard | ❌ Not started | Cloudinary service, `apps/admin` build |
+| Phase 3 | Orders, payments | ✅ Done | None |
+| Phase 4 | Upload, admin dashboard | 🚧 In Progress | Cloudinary service, `apps/admin` build |
 | Phase 5 | Production hardening | ❌ Not started | Redis caching, Resend, CI/CD, Turborepo Remote Caching |
 
 ## 3. Immediate Next Items
-1. Orders module — OrdersService, OrdersController, OrdersModule
-2. Order DTOs — CreateOrderDto, OrderItemDto
-3. Orders endpoints — POST /orders, GET /orders, GET /orders/:id
-4. prisma.$transaction — create order + items + decrement stock atomically
-5. Paystack payment init — POST /payments/initialize
-6. Paystack webhook — POST /payments/webhook (verify signature, create order on charge.success)
-7. BullMQ send-order-confirmation job
+1. Sentry integration (API + Web) — Error tracking and monitoring
+2. Phase 4: Admin & Upload — Cloudinary integration, `apps/admin` build, Admin dashboard
+3. Shipping config endpoint — deferred until admin panel is built
 
 ## 4. Open Decisions
 - Review submission form UI — deferred until profile/admin polish
@@ -66,10 +62,10 @@ This document is the authoritative reference for the current build state and fut
 ## 5. Known Technical Debt
 - Basic API rate limiting implemented via Upstash (sliding window, 100 req/1m). Future improvement: Add comprehensive rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset) to support client-side throttling.
 - No Redis caching on `GET /products` — placeholder only
-- Mail still on Gmail SMTP — Resend switch deferred to production
+- Mail now using Resend
 - No CI/CD pipeline
 - No Turborepo Remote Caching
-- Admin review block not implemented — `ForbiddenException` check missing from `ReviewsService.create`
+- Admin review block not implemented — `ForbiddenException` check missing in `ReviewsService.create`
 
 ## 6. Phase Roadmap
 ### Phase 1: Core Platform (Complete)
@@ -78,12 +74,13 @@ This document is the authoritative reference for the current build state and fut
 - Next.js frontend deployed to Vercel
 - Neon PostgreSQL + Upstash Redis active
 
-### Phase 2: Commerce (Current)
-- Orders module
+### Phase 2: Commerce (Complete)
+- Orders module with silent stock reservation
 - Paystack payments (initialize + webhook)
-- BullMQ order confirmation email
+- BullMQ order confirmation emails
+- Professional checkout and order history UX
 
-### Phase 3: Admin & Upload
+### Phase 3: Admin & Upload (Current)
 - Cloudinary upload service
 - `apps/admin` — separate Next.js app with Shadcn
 - Admin dashboard — products, orders, users, categories
@@ -91,7 +88,6 @@ This document is the authoritative reference for the current build state and fut
 
 ### Phase 4: Production Hardening
 - Redis caching on `GET /products`
-- Switch mail to Resend
 - Rate limiting configuration
 - Turborepo Remote Caching
 - CI/CD pipeline
