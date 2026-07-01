@@ -82,7 +82,6 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
       
       // 3. Initialize payment using the created order's ID
       const paymentData = await initializePayment(order.id)
-      console.log('[CheckoutForm] paymentData received:', paymentData)
       
       // 4. Trigger Paystack popup
       // Since react-paystack has SSR issues, we use the native window call 
