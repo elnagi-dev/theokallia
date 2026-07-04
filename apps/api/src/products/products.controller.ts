@@ -36,6 +36,13 @@ export class ProductsController {
     return this.productsService.findAll(filters)
   }
 
+  @Get('test-sentry')
+  @AllowAnonymous()
+  @ApiOperation({ summary: 'Test Sentry Backend' })
+  testSentry() {
+    throw new Error('Sentry Backend Test');
+  }
+
   // product detail page — fetches full product data including reviews and rating
   // e.g. GET /products/temi-gold-bracelet
   @Get(':slug')
