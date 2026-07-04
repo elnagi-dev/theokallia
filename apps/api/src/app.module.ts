@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common'
+import { APP_FILTER } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
+import { SentryModule } from '@sentry/nestjs/setup'
+import { SentryGlobalFilter } from '@sentry/nestjs/setup'
 import { BullModule } from '@nestjs/bullmq'
 import { UsersModule } from './users/users.module'
 import { CategoriesModule } from './categories/categories.module'
@@ -29,6 +32,7 @@ import * as Joi from 'joi'
         DATABASE_URL: Joi.string().required(),
         BETTER_AUTH_SECRET: Joi.string().required(),
         BETTER_AUTH_URL: Joi.string().required(),
+        SENTRY_DSN: Joi.string().uri().optional(),
         REDIS_URL: Joi.string().required(),
         MAIL_FROM: Joi.string().required(),
         PAYSTACK_SECRET_KEY: Joi.string().required(),
@@ -43,6 +47,7 @@ import * as Joi from 'joi'
       },
     }),
     BetterAuthModule.forRoot({ auth }),
+    SentryModule.forRoot(),
     PrismaModule,
     RedisModule,
     MailModule,
@@ -55,6 +60,12 @@ import * as Joi from 'joi'
     OrdersModule,
     PaymentsModule,
     RateLimitModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
   ],
 })
 export class AppModule {}

@@ -1,3 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+allowBuilds:
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  "@sentry/node-cpu-profiler": true
+  msgpackr-extract: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
