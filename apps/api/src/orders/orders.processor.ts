@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Logger } from '@nestjs/common'
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'

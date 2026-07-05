@@ -23,7 +23,7 @@ export class CartService {
     return this.prisma.client.cart.upsert({
       where: { userId },
       create: { userId },
-      update: {}, // nothing to update — just return existing
+      update: {},
       include: {
         items: {
           include: {
@@ -33,7 +33,6 @@ export class CartService {
                 name: true,
                 slug: true,
                 price: true,
-                images: true,
                 inStock: true,
                 stock: true,
                 category: { select: { name: true } },
@@ -41,10 +40,38 @@ export class CartService {
               },
             },
           },
-          orderBy: { createdAt: 'asc' }, // stable order — oldest item first
+          orderBy: { createdAt: 'asc' },
         },
       },
     })
+  }
+
+  /**
+   * Merges assets into each cart item's product by fetching them in a single batch query.
+   * Assets are polymorphic (entityType + entityId) so Prisma can't include them directly.
+   */
+  private async attachAssets(
+    items: Array<{ product: { id: string } }>,
+  ) {
+    const ids = [...new Set(items.map((i) => i.product.id))]
+    if (ids.length === 0) return
+
+    const assets = await this.prisma.client.asset.findMany({
+      where: { entityType: 'Product', entityId: { in: ids } },
+      orderBy: { sortOrder: 'asc' },
+    })
+
+    const map = new Map<string, (typeof assets)[number][]>()
+    for (const asset of assets) {
+      const group = map.get(asset.entityId) ?? []
+      group.push(asset)
+      map.set(asset.entityId, group)
+    }
+
+    // mutate cart items in-place — caller already has the reference
+    for (const item of items) {
+      ;(item.product as Record<string, unknown>).assets = map.get(item.product.id) ?? []
+    }
   }
 
   // public methods
@@ -80,6 +107,9 @@ export class CartService {
         ),
       )
     }
+
+    // attach polymorphic assets to each product
+    await this.attachAssets(validatedItems)
 
     // compute total from validated quantities — not raw cart quantities
     const total = validatedItems.reduce(

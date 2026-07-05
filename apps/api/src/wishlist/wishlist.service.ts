@@ -14,7 +14,7 @@ export class WishlistService {
    * Creates the wishlist if it doesn't exist yet — lazily, like the cart.
    */
   private async getOrCreateWishlist(userId: string) {
-    return this.prisma.client.wishlist.upsert({
+    const wishlist = await this.prisma.client.wishlist.upsert({
       where: { userId },
       create: { userId },
       update: {},
@@ -27,7 +27,6 @@ export class WishlistService {
                 name: true,
                 slug: true,
                 price: true,
-                images: true,
                 inStock: true,
                 stock: true,
                 category: { select: { name: true } },
@@ -38,6 +37,28 @@ export class WishlistService {
         },
       },
     })
+
+    // batch-fetch polymorphic assets for all wishlisted products
+    const ids = wishlist.items.map((i) => i.product.id)
+    if (ids.length > 0) {
+      const assets = await this.prisma.client.asset.findMany({
+        where: { entityType: 'Product', entityId: { in: ids } },
+        orderBy: { sortOrder: 'asc' },
+      })
+
+      const assetMap = new Map<string, (typeof assets)[number][]>()
+      for (const asset of assets) {
+        const group = assetMap.get(asset.entityId) ?? []
+        group.push(asset)
+        assetMap.set(asset.entityId, group)
+      }
+
+      for (const item of wishlist.items) {
+        ;(item.product as Record<string, unknown>).assets = assetMap.get(item.product.id) ?? []
+      }
+    }
+
+    return wishlist
   }
 
   // public methods

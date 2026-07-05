@@ -113,11 +113,17 @@ export class ProductsService {
             throw new NotFoundException(`Product '${slug}' not found`)
         }
 
+        // fetch assets polymorphically — entityType + entityId links them to this product
+        const assets = await this.prisma.client.asset.findMany({
+            where: { entityType: 'Product', entityId: product.id },
+            orderBy: { sortOrder: 'asc' },
+        })
+
         // compute rating stats from reviews instead of storing them on the product
         // this keeps the DB as the single source of truth
         const rating = this.computeRating(product.reviews)
 
-        return { ...product, ...rating }
+        return { ...product, assets, ...rating }
     }
 
     async findSimilar(slug: string) {
@@ -132,7 +138,7 @@ export class ProductsService {
         }
 
         // return 3 products from the same category, excluding the current product
-        return this.prisma.client.product.findMany({
+        const similar = await this.prisma.client.product.findMany({
             where: {
                 categoryId: product.categoryId,
                 id: { not: product.id },
@@ -144,6 +150,25 @@ export class ProductsService {
             },
             orderBy: { createdAt: 'desc' },
         })
+
+        // batch-fetch assets for all similar products to avoid N+1
+        const ids = similar.map((p) => p.id)
+        const assets = await this.prisma.client.asset.findMany({
+            where: { entityType: 'Product', entityId: { in: ids } },
+            orderBy: { sortOrder: 'asc' },
+        })
+
+        const assetMap = new Map<string, typeof assets>()
+        for (const asset of assets) {
+            const group = assetMap.get(asset.entityId) ?? []
+            group.push(asset)
+            assetMap.set(asset.entityId, group)
+        }
+
+        return similar.map((p) => ({
+            ...p,
+            assets: assetMap.get(p.id) ?? [],
+        }))
     }
 
     // Admin
@@ -181,13 +206,12 @@ export class ProductsService {
             subcategoryId = subcategory.id
         }
 
-        return this.prisma.client.product.create({
+        const created = await this.prisma.client.product.create({
             data: {
                 name: dto.name,
                 slug: dto.slug,
                 description: dto.description,
                 price: dto.price,
-                images: dto.images,
                 inStock: dto.inStock ?? true,
                 stock: dto.stock,
                 categoryId: category.id,
@@ -198,6 +222,21 @@ export class ProductsService {
                 subcategory: { select: { name: true, slug: true } },
             },
         })
+
+        // if publicIds were passed, create asset records for them
+        if (dto.images && dto.images.length > 0) {
+            await this.prisma.client.asset.createMany({
+                data: dto.images.map((publicId, i) => ({
+                    publicId,
+                    altText: `${created.name} image ${i + 1}`,
+                    sortOrder: i,
+                    entityType: 'Product',
+                    entityId: created.id,
+                })),
+            })
+        }
+
+        return created
     }
 
     async update(slug: string, dto: UpdateProductDto) {
@@ -243,14 +282,13 @@ export class ProductsService {
             subcategoryId = subcategory.id
         }
 
-        return this.prisma.client.product.update({
+        const updated = await this.prisma.client.product.update({
             where: { slug },
             data: {
                 name: dto.name,
                 slug: dto.slug,
                 description: dto.description,
                 price: dto.price,
-                images: dto.images,
                 inStock: dto.inStock,
                 stock: dto.stock,
                 ...(categoryId && { categoryId }),
@@ -261,6 +299,25 @@ export class ProductsService {
                 subcategory: { select: { name: true, slug: true } },
             },
         })
+
+        // if images were provided, replace existing assets with new ones
+        if (dto.images) {
+            await this.prisma.client.asset.deleteMany({
+                where: { entityType: 'Product', entityId: updated.id },
+            })
+
+            await this.prisma.client.asset.createMany({
+                data: dto.images.map((publicId, i) => ({
+                    publicId,
+                    altText: `${updated.name} image ${i + 1}`,
+                    sortOrder: i,
+                    entityType: 'Product',
+                    entityId: updated.id,
+                })),
+            })
+        }
+
+        return updated
     }
 
     async delete(slug: string) {

@@ -12,7 +12,7 @@ export class OrdersService {
     @InjectQueue('orders') private ordersQueue: Queue,
   ) {}
 
-  async createOrder(userId: string, dto: CreateOrderDto): Promise<Order> {
+  async createOrder(userId: string, _dto: CreateOrderDto): Promise<Order> {
     // Check if user already has a pending order — reuse it
     const existingPending = await this.prisma.client.order.findFirst({
       where: { userId, status: 'pending' },

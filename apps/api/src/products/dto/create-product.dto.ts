@@ -6,7 +6,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   Min,
 } from 'class-validator'
 
@@ -28,10 +27,11 @@ export class CreateProductDto {
   @Min(0)
   price: number
 
-  @ApiProperty({ example: ['https://res.cloudinary.com/...'] })
+  @ApiPropertyOptional({ example: ['public_id_1', 'public_id_2'] })
+  @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
-  images: string[]
+  @IsString({ each: true })
+  images?: string[]
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()
@@ -43,7 +43,6 @@ export class CreateProductDto {
   @Min(0)
   stock: number
 
-  // category and subcategory are linked by their slugs — easier than passing IDs
   @ApiProperty({ example: 'bracelets' })
   @IsString()
   categorySlug: string

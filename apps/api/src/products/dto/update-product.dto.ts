@@ -6,7 +6,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   Min,
 } from 'class-validator'
 
@@ -33,10 +32,10 @@ export class UpdateProductDto {
   @Min(0)
   price?: number
 
-  @ApiPropertyOptional({ example: ['https://res.cloudinary.com/...'] })
+  @ApiPropertyOptional({ example: ['public_id_1', 'public_id_2'] })
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsString({ each: true })
   images?: string[]
 
   @ApiPropertyOptional({ example: true })

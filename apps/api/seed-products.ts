@@ -219,21 +219,31 @@ async function main() {
       continue
     }
 
-    await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {},
-      create: {
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        price: product.price,
-        images: product.images,
-        inStock: product.inStock,
-        stock: product.stock,
-        categoryId: category.id,
-        subcategoryId: subcategory.id,
-      },
-    })
+      const created = await prisma.product.upsert({
+        where: { slug: product.slug },
+        update: {},
+        create: {
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          price: product.price,
+          inStock: product.inStock,
+          stock: product.stock,
+          categoryId: category.id,
+          subcategoryId: subcategory.id,
+        },
+      })
+
+      await prisma.asset.createMany({
+        data: product.images.map((publicId, i) => ({
+          publicId,
+          altText: `${product.name} image ${i + 1}`,
+          sortOrder: i,
+          entityType: 'Product',
+          entityId: created.id,
+        })),
+        skipDuplicates: true,
+      })
     console.log(`✅ Product: ${product.name}`)
   }
 
