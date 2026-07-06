@@ -9,12 +9,22 @@ import { useGuestWishlistStore } from '@/lib/stores/guest-wishlist-store'
 import { useGuestCartStore } from '@/lib/stores/guest-cart-store'
 import { toast } from 'sonner'
 
+export interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 export interface WishlistItemProduct {
   id: string
   name: string
   slug: string
   price: number
-  images: string[]
+  assets: Asset[]
   inStock: boolean
   stock: number
   category: { name: string }
@@ -112,7 +122,7 @@ export default function WishlistItem({
             quantity: 1,
             name: product.name,
             price: product.price,
-            image: product.images[0] || '/placeholder-image.jpg',
+            image: product.assets[0]?.publicId || '/placeholder-image.jpg',
             categoryName: product.category.name,
             subcategoryName: product.subcategory?.name || null,
             slug: product.slug,
@@ -126,7 +136,7 @@ export default function WishlistItem({
             name: product.name,
             slug: product.slug,
             price: product.price,
-            images: product.images,
+            assets: product.assets,
             inStock: product.inStock,
             stock: product.stock,
             category: product.category,
@@ -140,7 +150,7 @@ export default function WishlistItem({
     <div className="flex max-w-xl gap-6 bg-neutral-50 p-4">
       <div className="relative h-44 w-44 shrink-0">
         <Image
-          src={product.images[0] || '/placeholder-image.jpg'}
+          src={product.assets[0]?.publicId || '/placeholder-image.jpg'}
           alt={product.name}
           fill
           className="object-cover"

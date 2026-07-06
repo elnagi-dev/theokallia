@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, Package, Calendar, CreditCard } from 'lucide-react'
+import { ChevronLeft, Package } from 'lucide-react'
 import Link from 'next/link'
 import { useOrders } from '@/lib/hooks/use-orders'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -31,7 +31,7 @@ export default function OrdersPage() {
       {orderList.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 text-center">
           <Package size={64} className="text-gray-300 mb-6" />
-          <p className="text-xl text-gray-600 mb-8">You haven't placed any orders yet.</p>
+          <p className="text-xl text-gray-600 mb-8">You haven&apos;t placed any orders yet.</p>
           <Link href="/shop">
             <button className="bg-[#7E22CE] px-8 py-3 text-sm tracking-widest text-white uppercase hover:bg-purple-700">
               Start Shopping

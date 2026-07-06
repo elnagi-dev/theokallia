@@ -21,7 +21,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { isAuthenticated } = useAuthStore()
   const [showAdded, setShowAdded] = useState(false)
 
-  const { mutate: addToCart, isPending: isAdding } =
+  const { mutate: addToCart } =
     useAddToCart(isAuthenticated)
 
   // authenticated cart — reads from React Query cache, zero extra server calls
@@ -62,7 +62,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               quantity: 1,
               name: product.name,
               price: product.price,
-              image: product.images[0] || '/placeholder-image.jpg',
+              image: product.assets[0]?.publicId || '/placeholder-image.jpg',
               categoryName: product.category.name,
               subcategoryName: product.subcategory?.name || null,
               slug: product.slug,
@@ -76,7 +76,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               name: product.name,
               slug: product.slug,
               price: product.price,
-              images: product.images,
+              assets: product.assets,
               inStock: product.inStock,
               stock: product.stock,
               category: product.category,
@@ -128,10 +128,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
               }
             />
           </button>
-          {product.images[0] && (
+          {product.assets[0]?.publicId && (
             <ViewTransition name={product.slug}>
               <Image
-                src={product.images[0]}
+                src={product.assets[0].publicId}
                 alt={product.name}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

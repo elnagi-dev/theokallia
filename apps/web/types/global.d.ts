@@ -9,8 +9,8 @@ declare global {
         amount: number;
         currency: string;
         ref: string;
-        metadata?: Record<string, any>;
-        callback: (response: any) => void;
+        metadata?: Record<string, unknown>;
+        callback: (response: { reference: string }) => void;
         onClose: () => void;
       }) => {
         openIframe: () => void;

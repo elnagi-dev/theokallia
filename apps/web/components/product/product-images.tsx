@@ -4,23 +4,33 @@ import { useState } from 'react'
 import { ViewTransition } from 'react'
 import Image from 'next/image'
 
+interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 interface ProductImagesProps {
-  images: string[]
+  assets: Asset[]
   productName: string
   slug: string
 }
 
-const ProductImages = ({ images, productName, slug }: ProductImagesProps) => {
+const ProductImages = ({ assets, productName, slug }: ProductImagesProps) => {
   const [activeIndex, setActiveIndex] = useState(0)
 
   return (
     <div className="flex flex-col gap-3">
        {/* Main Image */}
        <div className="relative aspect-square w-full overflow-hidden bg-[#f5f0eb]">
-         {images[activeIndex] ? (
+         {assets[activeIndex]?.publicId ? (
            <ViewTransition name={slug}>
              <Image
-               src={images[activeIndex]}
+               src={assets[activeIndex].publicId}
                alt={productName}
                fill
                className="object-cover"
@@ -37,12 +47,12 @@ const ProductImages = ({ images, productName, slug }: ProductImagesProps) => {
 
       {/* Thumbnails */}
       <div className="grid grid-cols-4 gap-3">
-        {images.map((image, index) => {
+        {assets.map((asset, index) => {
           const isActive = activeIndex === index
 
           return (
             <button
-              key={index}
+              key={asset.id}
               onClick={() => setActiveIndex(index)}
               className={`relative aspect-square overflow-hidden bg-[#f5f0eb] transition-opacity ${
                 isActive
@@ -51,8 +61,8 @@ const ProductImages = ({ images, productName, slug }: ProductImagesProps) => {
               }`}
             >
               <Image
-                src={image}
-                alt={`${productName} view ${index + 1}`}
+                src={asset.publicId}
+                alt={asset.altText ?? `${productName} view ${index + 1}`}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 25vw, 12vw"

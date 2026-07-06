@@ -1,9 +1,12 @@
+/* globals process */
 /** @type {import('next').NextConfig} */
 import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig = {
     output: 'standalone',
     images: {
+        loader: 'custom',
+        loaderFile: './lib/cloudinary-loader.ts',
         remotePatterns: [
             {
                 protocol: 'https',

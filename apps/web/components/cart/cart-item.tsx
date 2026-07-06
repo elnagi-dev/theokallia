@@ -7,6 +7,16 @@ import { useToggleWishlist, useWishlist } from '@/lib/hooks/use-wishlist'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { toast } from 'sonner'
 
+interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 interface CartItemProps {
   item: {
     id: string
@@ -17,7 +27,7 @@ interface CartItemProps {
       name: string
       slug: string
       price: number
-      images: string[]
+      assets: Asset[]
       inStock: boolean
       stock: number
       category: { name: string }
@@ -49,7 +59,7 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
         name: item.product.name,
         slug: item.product.slug,
         price: item.product.price,
-        images: item.product.images,
+        assets: item.product.assets,
         inStock: item.product.inStock,
         stock: item.product.stock,
         category: item.product.category,
@@ -67,7 +77,7 @@ export default function CartItem({ item, onUpdate }: CartItemProps) {
     <div className="flex max-w-xl gap-6 bg-neutral-50 p-4">
       <div className="relative h-44 w-44 shrink-0">
         <Image
-          src={item.product.images[0] || '/placeholder-image.jpg'}
+          src={item.product.assets[0]?.publicId || '/placeholder-image.jpg'}
           alt={item.product.name}
           fill
           className="object-cover"

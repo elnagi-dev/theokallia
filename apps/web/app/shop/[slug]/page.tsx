@@ -50,7 +50,7 @@ export default function ProductPage() {
       <main className="mx-auto max-w-6xl px-6 py-12">
         {/* top section — images + info + shipping */}
         <div className="grid grid-cols-2 gap-12">
-          <ProductImages images={product.images} productName={product.name} slug={slug} />
+          <ProductImages assets={product.assets} productName={product.name} slug={slug} />
 
           <div className="flex flex-col gap-6">
             {/* pass full product — ProductInfo needs id, stock, images etc for cart + wishlist */}

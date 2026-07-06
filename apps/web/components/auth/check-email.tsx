@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useVerificationStatus, useResendVerification } from '@/lib/hooks/use-auth'
-import { Button } from '@/components/ui/button'
 
 interface CheckEmailProps {
   email: string
@@ -9,7 +8,6 @@ interface CheckEmailProps {
 
 export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
   const [timer, setTimer] = useState(60)
-  const [isResending, setIsResending] = useState(false)
   const [resendSuccess, setResendSuccess] = useState(false)
 
   const { data } = useVerificationStatus(email)
@@ -32,7 +30,6 @@ export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
   }, [timer])
 
   const handleResend = async () => {
-    setIsResending(true)
     setResendSuccess(false)
     try {
       await resendEmail(email)
@@ -40,8 +37,6 @@ export default function CheckEmail({ email, onVerified }: CheckEmailProps) {
       setTimer(60)
     } catch (error) {
       console.error('Failed to resend verification email:', error)
-    } finally {
-      setIsResending(false)
     }
   }
 

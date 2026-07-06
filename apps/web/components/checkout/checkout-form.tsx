@@ -3,12 +3,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Button } from '@/components/ui/button'
 import { useInitializePayment, useVerifyPayment } from '@/lib/hooks/use-payments'
 import { useCreateOrder } from '@/lib/hooks/use-orders'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 
 // Dynamically import the hook-related logic or the library if it's causing issues.
@@ -74,6 +72,8 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
+      onPaymentInitiated(data)
+      
       // 1. Format shipping address for the backend
       const shippingAddress = `${data.fullName}, ${data.address}, ${data.city}, ${data.state}, ${data.zipCode}, ${data.phone}`
       
@@ -87,10 +87,6 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
       // Since react-paystack has SSR issues, we use the native window call 
       // but wrapped in a check to ensure it only runs on the client.
       if (typeof window !== 'undefined') {
-        const { usePaystackPayment } = await import('react-paystack')
-        // Since we can't call a hook inside an async function, 
-        // we fallback to the window implementation but in a safer way.
-        
         if (!window.PaystackPop) {
           await new Promise((resolve) => {
             const script = document.createElement('script')
@@ -111,7 +107,7 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
             amount: paymentData.amount,
             currency: 'NGN',
             ref: paymentData.reference,
-            callback: (response: any) => {
+            callback: (response: { reference: string }) => {
               setIsVerifying(true)
               verifyPayment(response.reference).then(() => {
                 toast.success('Payment successful! Redirecting...')
@@ -132,8 +128,10 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
           throw new Error('PaystackPop.setup is not available')
         }
       }
-    } catch (error: any) {
+    } catch (unknownError) {
+      const error = unknownError as { response?: { data?: { message?: string } } }
       toast.error(error?.response?.data?.message || 'Failed to complete purchase. Please try again.')
+      console.error(unknownError)
       console.error(error)
     }
   }
@@ -209,7 +207,7 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
 
       <button
         type="submit"
-        disabled={isInitializing || isCreatingOrder}
+        disabled={isInitializing || isCreatingOrder || isPending}
         className="w-full py-4 text-sm tracking-widest text-white uppercase transition-colors hover:bg-purple-700 disabled:opacity-50"
         style={{ background: 'var(--color-primary)' }}
       >

@@ -7,12 +7,22 @@ import { toast } from 'sonner'
 
 // types
 
+interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 interface WishlistProduct {
   id: string
   name: string
   slug: string
   price: number
-  images: string[]
+  assets: Asset[]
   inStock: boolean
   stock: number
   category: { name: string }
@@ -162,7 +172,7 @@ export const useToggleWishlist = (isAuthenticated: boolean, silent = false) => {
                 name: params.product.name,
                 slug: params.product.slug,
                 price: params.product.price,
-                images: params.product.images,
+                assets: params.product.assets,
                 inStock: params.product.inStock,
                 stock: params.product.stock,
                 category: params.product.category,

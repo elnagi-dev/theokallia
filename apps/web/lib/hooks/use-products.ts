@@ -15,6 +15,16 @@ interface Subcategory {
   slug: string
 }
 
+interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 interface Review {
   id: string
   rating: number
@@ -32,7 +42,7 @@ export interface Product {
   slug: string
   description: string
   price: number
-  images: string[]
+  assets: Asset[]
   inStock: boolean
   stock: number
   category: Category

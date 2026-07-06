@@ -7,6 +7,13 @@ import { usePendingOrder } from '@/lib/hooks/use-orders'
 
 const DELIVERY_FEE = 10000
 
+type SummaryItem = {
+  id: string
+  quantity: number
+  product: { name: string; price?: number; images?: string[] }
+  price?: number
+}
+
 export default function OrderSummary() {
   const { isAuthenticated } = useAuthStore()
   const { data: dbCart } = useCart(isAuthenticated)
@@ -29,16 +36,19 @@ export default function OrderSummary() {
         </h2>
         
         <div className="flex flex-col gap-4">
-          {items.map((item: any) => (
-            <div key={item.id || item.productId} className="flex items-center justify-between text-sm">
+          {items.map((item: SummaryItem) => {
+            const displayPrice = item.product.price ?? item.price ?? 0
+            return (
+            <div key={item.id} className="flex items-center justify-between text-sm">
               <span className="text-gray-600">
-                {'product' in item ? `${item.product.name} × ${item.quantity}` : `Item × ${item.quantity}`}
+                {item.product.name} × {item.quantity}
               </span>
               <span className="font-medium">
-                ₦{((item.product?.price ?? item.price) * item.quantity).toLocaleString()}
+                ₦{(displayPrice * item.quantity).toLocaleString()}
               </span>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">

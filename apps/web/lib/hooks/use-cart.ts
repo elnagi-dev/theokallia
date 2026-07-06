@@ -7,12 +7,22 @@ import { toast } from 'sonner'
 
 // types
 
+interface Asset {
+  id: string
+  publicId: string
+  altText: string | null
+  sortOrder: number
+  resourceType: string
+  entityType: string
+  entityId: string
+}
+
 interface CartProduct {
   id: string
   name: string
   slug: string
   price: number
-  images: string[]
+  assets: Asset[]
   inStock: boolean
   stock: number
   category: { name: string }
@@ -49,7 +59,7 @@ interface AddToCartPayload {
     name: string
     slug: string
     price: number
-    images: string[]
+    assets: Asset[]
     inStock: boolean
     stock: number
     category: { name: string }

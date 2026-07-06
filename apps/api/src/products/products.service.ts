@@ -80,8 +80,25 @@ export class ProductsService {
             this.prisma.client.product.count({ where }),
         ])
 
+        // batch-fetch assets for all products on this page to avoid N+1
+        const ids = products.map((p) => p.id)
+        const assets = await this.prisma.client.asset.findMany({
+            where: { entityType: 'Product', entityId: { in: ids } },
+            orderBy: { sortOrder: 'asc' },
+        })
+        const assetMap = new Map<string, typeof assets>()
+        for (const asset of assets) {
+            const group = assetMap.get(asset.entityId) ?? []
+            group.push(asset)
+            assetMap.set(asset.entityId, group)
+        }
+        const productsWithAssets = products.map((p) => ({
+            ...p,
+            assets: assetMap.get(p.id) ?? [],
+        }))
+
         return {
-            data: products,
+            data: productsWithAssets,
             meta: {
                 total,
                 page,

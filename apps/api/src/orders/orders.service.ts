@@ -101,11 +101,38 @@ export class OrdersService {
   }
 
   async getUserOrders(userId: string) {
-    return this.prisma.client.order.findMany({
+    const orders = await this.prisma.client.order.findMany({
       where: { userId },
       include: { items: { include: { product: true } } },
       orderBy: { createdAt: 'desc' },
     })
+
+    // batch-fetch assets for all products across all order items
+    const productIds = [...new Set(orders.flatMap((o) => o.items.map((i) => i.productId)))]
+    if (productIds.length > 0) {
+      const assets = await this.prisma.client.asset.findMany({
+        where: { entityType: 'Product', entityId: { in: productIds } },
+        orderBy: { sortOrder: 'asc' },
+      })
+      const assetMap = new Map<string, typeof assets>()
+      for (const asset of assets) {
+        const group = assetMap.get(asset.entityId) ?? []
+        group.push(asset)
+        assetMap.set(asset.entityId, group)
+      }
+      return orders.map((order) => ({
+        ...order,
+        items: order.items.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            assets: assetMap.get(item.productId) ?? [],
+          },
+        })),
+      }))
+    }
+
+    return orders
   }
 
   async getOrderById(userId: string, orderId: string) {
@@ -120,6 +147,31 @@ export class OrdersService {
 
     if (order.userId !== userId) {
       throw new ForbiddenException('You are not authorized to view this order')
+    }
+
+    // fetch assets for all products in this order
+    const productIds = [...new Set(order.items.map((i) => i.productId))]
+    if (productIds.length > 0) {
+      const assets = await this.prisma.client.asset.findMany({
+        where: { entityType: 'Product', entityId: { in: productIds } },
+        orderBy: { sortOrder: 'asc' },
+      })
+      const assetMap = new Map<string, typeof assets>()
+      for (const asset of assets) {
+        const group = assetMap.get(asset.entityId) ?? []
+        group.push(asset)
+        assetMap.set(asset.entityId, group)
+      }
+      return {
+        ...order,
+        items: order.items.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            assets: assetMap.get(item.productId) ?? [],
+          },
+        })),
+      }
     }
 
     return order

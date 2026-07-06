@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Calendar, Package, CreditCard } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -12,7 +13,7 @@ interface OrderItemProps {
     items: {
       product: {
         name: string
-        images: string[]
+        assets: { publicId: string }[]
       }
       quantity: number
     }[]
@@ -51,10 +52,11 @@ export default function OrderItem({ order }: OrderItemProps) {
           {order.items.map((item, idx) => (
             <div key={idx} className="flex items-center gap-3 bg-neutral-50 p-2 rounded">
               <div className="relative h-12 w-12 overflow-hidden rounded">
-                <img 
-                  src={item.product.images[0] || '/placeholder-image.jpg'} 
+                <Image 
+                  src={item.product.assets[0]?.publicId || '/placeholder-image.jpg'} 
                   alt={item.product.name} 
-                  className="h-full w-full object-cover" 
+                  fill
+                  className="object-cover" 
                 />
               </div>
               <div className="flex flex-col">
