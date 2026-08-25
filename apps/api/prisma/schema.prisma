@@ -7,24 +7,27 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String       @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean      @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   firstName     String
   lastName      String
   phone         String?
   address       String?
-  role          String    @default("customer")
+  role          String       @default("customer")
+  isVip         Boolean      @default(false)
+  vipSince      DateTime?
   sessions      Session[]
   accounts      Account[]
   orders        Order[]
   reviews       Review[]
   cart          Cart?
   wishlist      Wishlist?
+  couponUses    CouponUse[]
 
   @@unique([email])
   @@map("user")
@@ -86,6 +89,8 @@ model Category {
   subcategories Subcategory[]
   products      Product[]
   createdAt     DateTime      @default(now())
+
+  @@map("category")
 }
 
 model Subcategory {
@@ -97,6 +102,8 @@ model Subcategory {
   categoryId String
   products   Product[]
   createdAt  DateTime  @default(now())
+
+  @@map("subcategory")
 }
 
 model Product {
@@ -104,7 +111,9 @@ model Product {
   name          String
   slug          String         @unique
   description   String
-  price         Float
+  price         Float          // Source of truth in NGN (Nigerian Naira)
+  usdPrice      Float?         // Optional fixed price in USD
+  gbpPrice      Float?         // Optional fixed price in GBP
   inStock       Boolean        @default(true)
   stock         Int            @default(0)
   category      Category       @relation(fields: [categoryId], references: [id])
@@ -117,6 +126,8 @@ model Product {
   wishlistItems WishlistItem[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
+  @@map("product")
 }
 
 model Asset {
@@ -131,19 +142,30 @@ model Asset {
   updatedAt    DateTime @updatedAt
 
   @@index([entityType, entityId])
+  @@map("asset")
 }
 
 model ContentBlock {
-  id        String   @id @default(cuid())
-  section   String   @unique
+  id        String    @id @default(cuid())
+  section   String
   title     String?
   subtitle  String?
+  badge     String?
   ctaText   String?
   ctaLink   String?
-  sortOrder Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  linkUrl   String?
+  // type allowed values: "hero" | "banner" | "promotion"
+  type      String    @default("hero")
+  sortOrder Int       @default(0)
+  active    Boolean   @default(true)
+  // startsAt: null means active immediately with no start restriction
+  startsAt  DateTime?
+  // endsAt: null means active indefinitely with no expiration
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("content_block")
 }
 
 model Review {
@@ -154,19 +176,35 @@ model Review {
   userId    String
   rating    Int
   comment   String
+  // status allowed values: "pending" | "approved" | "rejected"
+  status    String   @default("pending")
   createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
+  @@map("review")
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  user      User        @relation(fields: [userId], references: [id])
-  userId    String
-  status    String      @default("pending") // pending | paid | shipped | delivered | cancelled
-  total     Float
-  items     OrderItem[]
-  reservations StockReservation[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String             @id @default(cuid())
+  user            User               @relation(fields: [userId], references: [id])
+  userId          String
+  status          String             @default("pending") // pending | paid | shipped | delivered | cancelled
+  total           Float
+  discount        Float              @default(0)
+  shippingFee     Float              @default(0)
+  // Exact JSON structure: { street: string, city: string, state: string, country: string }
+  shippingAddress Json?
+  shippingZone    ShippingZone?      @relation(fields: [shippingZoneId], references: [id])
+  shippingZoneId  String?
+  trackingNumber  String?
+  coupon          Coupon?            @relation(fields: [couponId], references: [id])
+  couponId        String?
+  items           OrderItem[]
+  reservations    StockReservation[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@map("order")
 }
 
 model StockReservation {
@@ -177,6 +215,8 @@ model StockReservation {
   quantity  Int
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@map("stock_reservation")
 }
 
 model OrderItem {
@@ -187,6 +227,8 @@ model OrderItem {
   productId String
   quantity  Int
   price     Float   // snapshot of price at time of purchase
+
+  @@map("order_item")
 }
 
 model Cart {
@@ -196,6 +238,8 @@ model Cart {
   items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@map("cart")
 }
 
 model CartItem {
@@ -209,6 +253,7 @@ model CartItem {
   updatedAt DateTime @updatedAt
 
   @@unique([cartId, productId])
+  @@map("cart_item")
 }
 
 model Wishlist {
@@ -218,6 +263,8 @@ model Wishlist {
   items     WishlistItem[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+
+  @@map("wishlist")
 }
 
 model WishlistItem {
@@ -229,4 +276,100 @@ model WishlistItem {
   createdAt  DateTime @default(now())
 
   @@unique([wishlistId, productId])
+  @@map("wishlist_item")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_token")
+}
+
+// Zone matching logic (state/country → zone name) lives in code, not the database.
+// See apps/api/src/orders/shipping-zone-mapping.config.ts
+model ShippingZone {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  rate      Float
+  active    Boolean  @default(true)
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shipping_zone")
+}
+
+model Coupon {
+  id           String      @id @default(cuid())
+  code         String      @unique
+  // type allowed values: "percent" | "fixed" | "free_shipping"
+  type         String
+  // value: percentage (e.g. 10 = 10%) or fixed NGN amount. Ignored when type is "free_shipping".
+  value        Float
+  // scope allowed values: "storewide" | "category" | "product"
+  scope        String      @default("storewide")
+  // scopeId: categoryId when scope is "category", productId when scope is "product", null when "storewide"
+  scopeId      String?
+  minOrder     Float?
+  // maxUses: null = unlimited total redemptions
+  maxUses      Int?
+  // perUserLimit: null = unlimited per user. Enforced in application logic, not DB constraint.
+  perUserLimit Int?
+  usedCount    Int         @default(0)
+  expiresAt    DateTime?
+  active       Boolean     @default(true)
+  orders       Order[]
+  uses         CouponUse[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("coupon")
+}
+
+// @@index([couponId, userId]) for fast per-user limit lookups.
+// No @@unique — perUserLimit can be any integer, enforced in CouponsService logic only.
+model CouponUse {
+  id        String   @id @default(cuid())
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  couponId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  orderId   String
+  createdAt DateTime @default(now())
+
+  @@index([couponId, userId])
+  @@map("coupon_use")
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  // userId: null if subscriber is a guest with no account
+  userId    String?
+  // tags allowed values: "guest" | "registered" | "vip"
+  tags      String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriber")
+}
+
+// Single-row settings table. Only one row ever exists.
+// Always query with findFirst(). Create a default row if none exists.
+model SiteConfig {
+  id                      String   @id @default(cuid())
+  vipOrderThreshold       Int      @default(3)
+  vipSpendThreshold       Float    @default(200000)
+  welcomeDiscountPercent  Int      @default(10)
+  welcomeDiscountMinOrder Float    @default(20000)
+  // welcomeDiscountExpiry: number of days from coupon creation until expiry
+  welcomeDiscountExpiry   Int      @default(30)
+  updatedAt               DateTime @updatedAt
+
+  @@map("site_config")
 }

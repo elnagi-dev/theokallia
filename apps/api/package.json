@@ -25,7 +25,8 @@
     "db:migrate:prod": "dotenv -e .env -- prisma migrate deploy",
     "db:studio": "dotenv -e .env -- prisma studio",
     "seed:categories": "dotenv -e .env -- ts-node seed-categories.ts",
-    "seed:products": "dotenv -e .env -- ts-node seed-products.ts"
+    "seed:products": "dotenv -e .env -- ts-node seed-products.ts",
+    "seed:zones": "dotenv -e .env -- ts-node seed-zones.ts"
   },
   "dependencies": {
     "@nestjs/bull": "^11.0.4",

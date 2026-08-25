@@ -41,14 +41,14 @@ export class ContentController {
   }
 
   /**
-   * GET /content/:section — returns a single block by section key.
-   * Useful for page-level fetching if only one section is needed.
+   * GET /content/:id — returns a single block by id.
+   * Useful for page-level fetching if only one block is needed.
    */
-  @Get(':section')
+  @Get(':id')
   @AllowAnonymous()
-  @ApiOperation({ summary: 'Get a single content block by section name' })
-  findOne(@Param('section') section: string) {
-    return this.contentService.findBySection(section)
+  @ApiOperation({ summary: 'Get a single content block by id' })
+  findOne(@Param('id') id: string) {
+    return this.contentService.findById(id)
   }
 
   /**
@@ -65,29 +65,29 @@ export class ContentController {
   }
 
   /**
-   * PATCH /content/:section — updates an existing section's content.
+   * PATCH /content/:id — updates an existing block's content.
    * Admin only. Used by the homepage builder to edit hero copy, CTAs, etc.
    */
-  @Patch(':section')
+  @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a content block by section (admin only)' })
-  update(@Param('section') section: string, @Body() dto: UpdateContentBlockDto) {
-    return this.contentService.update(section, dto)
+  @ApiOperation({ summary: 'Update a content block by id (admin only)' })
+  update(@Param('id') id: string, @Body() dto: UpdateContentBlockDto) {
+    return this.contentService.update(id, dto)
   }
 
   /**
-   * DELETE /content/:section — removes a section and its associated assets.
+   * DELETE /content/:id — removes a block and its associated assets.
    * Admin only. Cascading delete handles the polymorphic Asset cleanup.
    */
-  @Delete(':section')
+  @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a content block by section (admin only)' })
-  delete(@Param('section') section: string) {
-    return this.contentService.delete(section)
+  @ApiOperation({ summary: 'Delete a content block by id (admin only)' })
+  delete(@Param('id') id: string) {
+    return this.contentService.delete(id)
   }
 }

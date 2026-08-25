@@ -23,13 +23,13 @@ export class ContentService {
    * Sections are unique (hero, promotions, banners, featured).
    * Throws 404 if the section doesn't exist — caller should handle gracefully.
    */
-  async findBySection(section: string) {
+  async findById(id: string) {
     const block = await this.prisma.client.contentBlock.findUnique({
-      where: { section },
+      where: { id },
     })
 
     if (!block) {
-      throw new NotFoundException(`Content block '${section}' not found`)
+      throw new NotFoundException(`Content block with id '${id}' not found`)
     }
 
     return block
@@ -37,60 +37,39 @@ export class ContentService {
 
   /**
    * Creates a new content block for a section.
-   * Sections must be unique — attempting to create a duplicate returns 409.
    * The admin dashboard calls this when adding a new homepage section.
    */
   async create(dto: CreateContentBlockDto) {
-    // prevent duplicate sections — each section can only have one block
-    const existing = await this.prisma.client.contentBlock.findUnique({
-      where: { section: dto.section },
-    })
-
-    if (existing) {
-      throw new ConflictException(`A content block with section '${dto.section}' already exists`)
-    }
-
     return this.prisma.client.contentBlock.create({ data: dto })
   }
 
   /**
-   * Updates an existing content block by section.
+   * Updates a content block by id.
    * If the section field itself is being changed, checks that the new section name
    * isn't already taken — same uniqueness constraint as create.
    */
-  async update(section: string, dto: UpdateContentBlockDto) {
+  async update(id: string, dto: UpdateContentBlockDto) {
     // confirm the block exists before attempting updates
-    await this.findBySection(section)
-
-    // if section is being renamed, check the new name isn't taken
-    if (dto.section && dto.section !== section) {
-      const slugTaken = await this.prisma.client.contentBlock.findUnique({
-        where: { section: dto.section },
-      })
-
-      if (slugTaken) {
-        throw new ConflictException(`A content block with section '${dto.section}' already exists`)
-      }
-    }
+    await this.findById(id)
 
     return this.prisma.client.contentBlock.update({
-      where: { section },
+      where: { id },
       data: dto,
     })
   }
 
   /**
-   * Deletes a content block by section.
+   * Deletes a content block by id.
    * Cascades to associated assets — polymorphic Asset records with
    * entityType = 'ContentBlock' and matching entityId are also removed.
    */
-  async delete(section: string) {
-    await this.findBySection(section)
+  async delete(id: string) {
+    await this.findById(id)
 
     await this.prisma.client.contentBlock.delete({
-      where: { section },
+      where: { id },
     })
 
-    return { message: `Content block '${section}' deleted successfully` }
+    return { message: `Content block with id '${id}' deleted successfully` }
   }
 }
