@@ -16,10 +16,10 @@ import { useState, useEffect } from 'react'
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
-  address: z.string().min(5, 'Shipping address is required'),
+  street: z.string().min(5, 'Shipping address is required'),
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
-  zipCode: z.string().min(3, 'Zip code is required'),
+  country: z.string().min(2, 'Country is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
 })
 
@@ -68,17 +68,24 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      country: 'Nigeria',
+    },
   })
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
       onPaymentInitiated(data)
       
-      // 1. Format shipping address for the backend
-      const shippingAddress = `${data.fullName}, ${data.address}, ${data.city}, ${data.state}, ${data.zipCode}, ${data.phone}`
-      
       // 2. Create the order first
-      const order = await createOrder({ shippingAddress })
+      const order = await createOrder({
+        shippingAddress: {
+          street: data.street,
+          city: data.city,
+          state: data.state,
+          country: data.country,
+        },
+      })
       
       // 3. Initialize payment using the created order's ID
       const paymentData = await initializePayment(order.id)
@@ -164,17 +171,17 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
           {errors.phone && <span className="text-xs text-red-500">{errors.phone.message}</span>}
         </div>
 
-        <div className="flex flex-col gap-1 md:col-span-2">
+        <div className="flex flex-col gap-1">
           <input
-            {...register('address')}
-            placeholder="Shipping Address"
+            {...register('street')}
+            placeholder="Street Address"
             disabled={isInitializing || isCreatingOrder}
             className="w-full border border-gray-200 p-3 text-sm outline-none focus:border-black disabled:cursor-not-allowed disabled:opacity-50"
           />
-          {errors.address && <span className="text-xs text-red-500">{errors.address.message}</span>}
+          {errors.street && <span className="text-xs text-red-500">{errors.street.message}</span>}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 md:col-span-2">
           <input
             {...register('city')}
             placeholder="City"
@@ -196,12 +203,12 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
 
         <div className="flex flex-col gap-1">
           <input
-            {...register('zipCode')}
-            placeholder="Zip Code"
+            {...register('country')}
+            placeholder="Country"
             disabled={isInitializing || isCreatingOrder}
             className="w-full border border-gray-200 p-3 text-sm outline-none focus:border-black disabled:cursor-not-allowed disabled:opacity-50"
           />
-          {errors.zipCode && <span className="text-xs text-red-500">{errors.zipCode.message}</span>}
+          {errors.country && <span className="text-xs text-red-500">{errors.country.message}</span>}
         </div>
       </div>
 

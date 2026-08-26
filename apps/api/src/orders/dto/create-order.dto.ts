@@ -1,7 +1,26 @@
-import { IsString, IsOptional } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsString, IsNotEmpty, ValidateNested } from 'class-validator'
+
+export class ShippingAddressDto {
+  @IsString()
+  @IsNotEmpty()
+  street: string
+
+  @IsString()
+  @IsNotEmpty()
+  city: string
+
+  @IsString()
+  @IsNotEmpty()
+  state: string
+
+  @IsString()
+  @IsNotEmpty()
+  country: string
+}
 
 export class CreateOrderDto {
-  @IsString()
-  @IsOptional()
-  shippingAddress?: string
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
+  shippingAddress: ShippingAddressDto
 }

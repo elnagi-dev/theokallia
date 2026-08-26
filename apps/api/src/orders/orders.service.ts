@@ -4,6 +4,7 @@ import { CreateOrderDto } from './dto/create-order.dto'
 import { Order } from '@prisma/client'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
+import { resolveShippingZone } from './shipping-zone-mapping.config'
 
 @Injectable()
 export class OrdersService {
@@ -12,17 +13,7 @@ export class OrdersService {
     @InjectQueue('orders') private ordersQueue: Queue,
   ) {}
 
-  async createOrder(userId: string, _dto: CreateOrderDto): Promise<Order> {
-    // Check if user already has a pending order — reuse it
-    const existingPending = await this.prisma.client.order.findFirst({
-      where: { userId, status: 'pending' },
-      include: { items: true },
-    })
-
-    if (existingPending) {
-      return existingPending
-    }
-
+  async createOrder(userId: string, dto: CreateOrderDto): Promise<Order> {
     const cart = await this.prisma.client.cart.findUnique({
       where: { userId },
       include: { items: { include: { product: true } } },
@@ -32,8 +23,30 @@ export class OrdersService {
       throw new BadRequestException('Cart is empty. Please add items to your cart before ordering.')
     }
 
+    // Resolve which shipping zone applies based on the delivery address
+    const zoneName = resolveShippingZone(dto.shippingAddress)
+
+    // Fetch the zone record to get the rate — zone must exist in the database
+    const shippingZone = await this.prisma.client.shippingZone.findUnique({
+      where: { name: zoneName },
+    })
+
+    if (!shippingZone) {
+      throw new BadRequestException(
+        `Shipping zone "${zoneName}" is not currently available. Please contact support.`,
+      )
+    }
+
+    if (!shippingZone.active) {
+      throw new BadRequestException(
+        `Shipping to this location is currently unavailable. Please contact support.`,
+      )
+    }
+
+    const shippingFee = shippingZone.rate
+
     return this.prisma.client.$transaction(async (tx) => {
-      let total = 0
+      let subtotal = 0
       const orderItemsData: { productId: string; quantity: number; price: number }[] = []
       const reservationsData: { productId: string; quantity: number; expiresAt: Date }[] = []
 
@@ -52,11 +65,12 @@ export class OrdersService {
         const availableStock = product.stock - reservedQuantity
 
         if (availableStock < item.quantity) {
-          throw new BadRequestException(`Product ${product.name} is out of stock or insufficient quantity (available: ${availableStock})`)
+          throw new BadRequestException(
+            `${product.name} has insufficient stock (available: ${availableStock})`,
+          )
         }
 
-        const itemTotal = product.price * item.quantity
-        total += itemTotal
+        subtotal += product.price * item.quantity
 
         orderItemsData.push({
           productId: product.id,
@@ -71,10 +85,22 @@ export class OrdersService {
         })
       }
 
+      // total = items subtotal + shipping fee (discount applied later when coupon system is built)
+      const total = subtotal + shippingFee
+
       const order = await tx.order.create({
         data: {
           userId,
           total,
+          discount: 0,
+          shippingFee,
+          shippingAddress: {
+            street: dto.shippingAddress.street,
+            city: dto.shippingAddress.city,
+            state: dto.shippingAddress.state,
+            country: dto.shippingAddress.country,
+          },
+          shippingZoneId: shippingZone.id,
           status: 'pending',
           items: {
             create: orderItemsData,
@@ -107,7 +133,6 @@ export class OrdersService {
       orderBy: { createdAt: 'desc' },
     })
 
-    // batch-fetch assets for all products across all order items
     const productIds = [...new Set(orders.flatMap((o) => o.items.map((i) => i.productId)))]
     if (productIds.length > 0) {
       const assets = await this.prisma.client.asset.findMany({
@@ -149,7 +174,6 @@ export class OrdersService {
       throw new ForbiddenException('You are not authorized to view this order')
     }
 
-    // fetch assets for all products in this order
     const productIds = [...new Set(order.items.map((i) => i.productId))]
     if (productIds.length > 0) {
       const assets = await this.prisma.client.asset.findMany({

@@ -25,6 +25,13 @@ interface OrderItem {
   }
 }
 
+interface ShippingAddress {
+  street: string
+  city: string
+  state: string
+  country: string
+}
+
 interface Order {
   id: string
   total: number
@@ -32,14 +39,7 @@ interface Order {
   createdAt: string
   updatedAt: string
   items: OrderItem[]
-  shippingAddress: {
-    fullName: string
-    address: string
-    city: string
-    state: string
-    zipCode: string
-    phone: string
-  }
+  shippingAddress: ShippingAddress
 }
 
 // fetchers
@@ -54,7 +54,7 @@ const fetchOrderById = async (id: string): Promise<Order> => {
   return res.data
 }
 
-const createOrder = async (payload: { shippingAddress?: string }): Promise<Order> => {
+const createOrder = async (payload: { shippingAddress: ShippingAddress }): Promise<Order> => {
   const res = await api.post('/orders', payload)
   return res.data
 }
