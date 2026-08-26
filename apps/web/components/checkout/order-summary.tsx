@@ -3,9 +3,6 @@
 import { Package, Shield, Truck } from 'lucide-react'
 import { useCart } from '@/lib/hooks/use-cart'
 import { useAuthStore } from '@/lib/stores/auth-store'
-import { usePendingOrder } from '@/lib/hooks/use-orders'
-
-const DELIVERY_FEE = 10000
 
 type SummaryItem = {
   id: string
@@ -14,15 +11,19 @@ type SummaryItem = {
   price?: number
 }
 
-export default function OrderSummary() {
+interface OrderSummaryProps {
+  shippingFee?: number
+  discount?: number
+  couponCode?: string
+}
+
+export default function OrderSummary({ shippingFee = 0, discount = 0, couponCode }: OrderSummaryProps) {
   const { isAuthenticated } = useAuthStore()
   const { data: dbCart } = useCart(isAuthenticated)
-  const { pendingOrder } = usePendingOrder()
 
-  // Use cart items if available, otherwise fall back to pending order items
-  const items = dbCart?.items ?? pendingOrder?.items ?? []
-  const subtotal = dbCart?.total ?? pendingOrder?.total ?? 0
-  const orderTotal = subtotal + DELIVERY_FEE
+  const items = dbCart?.items ?? []
+  const subtotal = dbCart?.total ?? 0
+  const orderTotal = Math.max(0, subtotal - discount + shippingFee)
 
   if (items.length === 0) {
     return null
@@ -58,8 +59,14 @@ export default function OrderSummary() {
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Delivery fee</span>
-            <span>₦{DELIVERY_FEE.toLocaleString()}</span>
+            <span>₦{shippingFee.toLocaleString()}</span>
           </div>
+          {discount > 0 && (
+            <div className="flex items-center justify-between text-sm text-green-600">
+              <span>Discount {couponCode ? `(${couponCode})` : ''}</span>
+              <span>−₦{discount.toLocaleString()}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-lg font-medium">
             <span>Total</span>
             <span>₦{orderTotal.toLocaleString()}</span>

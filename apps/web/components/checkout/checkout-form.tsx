@@ -5,6 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useInitializePayment, useVerifyPayment } from '@/lib/hooks/use-payments'
 import { useCreateOrder } from '@/lib/hooks/use-orders'
+import { useValidateCoupon } from '@/lib/hooks/use-coupons'
+import { useCart } from '@/lib/hooks/use-cart'
+import { useAuthStore } from '@/lib/stores/auth-store'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
@@ -28,14 +31,34 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>
 interface CheckoutFormProps {
   onPaymentInitiated: (details: CheckoutFormValues) => void
   isPending: boolean
+  onCouponApplied: (discount: number, code: string) => void
+  onCouponCleared: () => void
 }
 
-export default function CheckoutForm({ onPaymentInitiated, isPending }: CheckoutFormProps) {
+export default function CheckoutForm({ onPaymentInitiated, isPending, onCouponApplied, onCouponCleared }: CheckoutFormProps) {
   const router = useRouter()
+  const { isAuthenticated } = useAuthStore()
   const { mutateAsync: initializePayment, isPending: isInitializing } = useInitializePayment()
   const { mutateAsync: createOrder, isPending: isCreatingOrder } = useCreateOrder()
   const { mutateAsync: verifyPayment } = useVerifyPayment()
+  const { validate, clear, isValidating, error: couponError, result: couponResult } = useValidateCoupon()
+  const { data: dbCart, isLoading: cartLoading } = useCart(isAuthenticated)
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedDiscount, setAppliedDiscount] = useState(0)
+  const [appliedCouponCode, setAppliedCouponCode] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      country: 'Nigeria',
+    },
+  })
+
 
   // Prevent navigation during payment verification
   useEffect(() => {
@@ -61,17 +84,24 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
     }
   }, [isVerifying])
 
-  const {
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return
+    if (!dbCart?.items?.length) return
 
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      country: 'Nigeria',
-    },
-  })
+    const subtotal = dbCart.items.reduce(
+      (sum: number, item: any) => sum + (item.product.price ?? 0) * item.quantity,
+      0,
+    )
+
+    const items = dbCart.items.map((item: any) => ({
+      productId: item.product.id,
+      categoryId: item.product.categoryId,
+      price: item.product.price ?? 0,
+      quantity: item.quantity,
+    }))
+
+    await validate(couponInput, subtotal, items)
+  }
 
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
@@ -85,6 +115,7 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
           state: data.state,
           country: data.country,
         },
+        couponCode: couponResult?.code ?? undefined,
       })
       
       // 3. Initialize payment using the created order's ID
@@ -143,6 +174,16 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
     }
   }
 
+  // Update applied discount and code when validation result changes
+  useEffect(() => {
+    if (couponResult) {
+      setAppliedDiscount(couponResult.discount)
+      setAppliedCouponCode(couponResult.code)
+      onCouponApplied(couponResult.discount, couponResult.code)
+    } else {
+      onCouponCleared()
+    }
+  }, [couponResult, onCouponApplied, onCouponCleared])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
@@ -210,6 +251,35 @@ export default function CheckoutForm({ onPaymentInitiated, isPending }: Checkout
           />
           {errors.country && <span className="text-xs text-red-500">{errors.country.message}</span>}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={couponInput}
+            onChange={(e) => {
+              setCouponInput(e.target.value)
+              if (couponResult) clear()
+            }}
+            placeholder="Coupon code"
+            className="flex-1 border border-gray-200 p-3 text-sm outline-none focus:border-black uppercase"
+          />
+          <button
+            type="button"
+            onClick={handleApplyCoupon}
+            disabled={isValidating || !couponInput.trim() || cartLoading}
+            className="border border-black px-4 text-sm tracking-widest uppercase hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+          >
+            {isValidating ? '...' : 'Apply'}
+          </button>
+        </div>
+        {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+        {couponResult && (
+          <p className="text-xs text-green-600">
+            Coupon applied — ₦{couponResult.discount.toLocaleString()} off
+          </p>
+        )}
       </div>
 
       <button

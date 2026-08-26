@@ -5,12 +5,14 @@ import { Order } from '@prisma/client'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { resolveShippingZone } from './shipping-zone-mapping.config'
+import { CouponsService } from '../coupons/coupons.service'
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     @InjectQueue('orders') private ordersQueue: Queue,
+    private couponsService: CouponsService,
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto): Promise<Order> {
@@ -43,9 +45,43 @@ export class OrdersService {
       )
     }
 
-    const shippingFee = shippingZone.rate
+const shippingFee = shippingZone.rate
 
-    return this.prisma.client.$transaction(async (tx) => {
+// Coupon pre-validation outside transaction — authoritative re-check happens inside
+let couponId: string | null = null
+let discount = 0
+
+if (dto.couponCode) {
+  const cart = await this.prisma.client.cart.findUnique({
+    where: { userId },
+    include: { items: { include: { product: true } } },
+  })
+
+  const subtotal = cart!.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+
+  const cartItems = cart!.items.map((item) => ({
+    productId: item.product.id,
+    categoryId: item.product.categoryId,
+    price: item.product.price,
+    quantity: item.quantity,
+  }))
+
+  const couponResult = await this.couponsService.validateCoupon(
+    { code: dto.couponCode, subtotal, items: cartItems },
+    userId,
+  )
+
+  // Handle free_shipping type — discount equals the shipping fee
+  if (couponResult.type === 'free_shipping') {
+    discount = shippingFee
+  } else {
+    discount = couponResult.discount
+  }
+
+  couponId = couponResult.couponId
+}
+
+return this.prisma.client.$transaction(async (tx) => {
       let subtotal = 0
       const orderItemsData: { productId: string; quantity: number; price: number }[] = []
       const reservationsData: { productId: string; quantity: number; expiresAt: Date }[] = []
@@ -85,14 +121,39 @@ export class OrdersService {
         })
       }
 
-      // total = items subtotal + shipping fee (discount applied later when coupon system is built)
-      const total = subtotal + shippingFee
+      // Authoritative coupon re-validation inside transaction — never trust pre-flight result
+let transactionDiscount = 0
+let transactionCouponId: string | null = couponId
 
-      const order = await tx.order.create({
+if (dto.couponCode && couponId) {
+  const cartItemsForValidation = cart.items.map((item) => ({
+    productId: item.product.id,
+    categoryId: item.product.categoryId,
+    price: item.product.price,
+    quantity: item.quantity,
+  }))
+
+  const revalidated = await this.couponsService.validateCoupon(
+    { code: dto.couponCode, subtotal, items: cartItemsForValidation },
+    userId,
+  )
+
+  if (revalidated.type === 'free_shipping') {
+    transactionDiscount = shippingFee
+  } else {
+    transactionDiscount = revalidated.discount
+  }
+
+  transactionCouponId = revalidated.couponId
+}
+
+const total = Math.max(0, subtotal - transactionDiscount + shippingFee)
+
+const order = await tx.order.create({
         data: {
           userId,
           total,
-          discount: 0,
+          discount: transactionDiscount,
           shippingFee,
           shippingAddress: {
             street: dto.shippingAddress.street,
@@ -101,6 +162,7 @@ export class OrdersService {
             country: dto.shippingAddress.country,
           },
           shippingZoneId: shippingZone.id,
+          couponId: transactionCouponId,
           status: 'pending',
           items: {
             create: orderItemsData,
@@ -115,6 +177,22 @@ export class OrdersService {
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       })
+
+      // Record coupon usage and increment usedCount atomically inside the transaction
+      if (transactionCouponId) {
+        await tx.couponUse.create({
+          data: {
+            couponId: transactionCouponId,
+            userId,
+            orderId: order.id,
+          },
+        })
+
+        await tx.coupon.update({
+          where: { id: transactionCouponId },
+          data: { usedCount: { increment: 1 } },
+        })
+      }
 
       await this.ordersQueue.add(
         'cleanup-reservation',

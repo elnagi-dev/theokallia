@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer'
-import { IsString, IsNotEmpty, ValidateNested } from 'class-validator'
+import { IsString, IsNotEmpty, IsOptional, ValidateNested } from 'class-validator'
 
 export class ShippingAddressDto {
   @IsString()
@@ -23,4 +23,8 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => ShippingAddressDto)
   shippingAddress: ShippingAddressDto
+
+  @IsString()
+  @IsOptional()
+  couponCode?: string
 }

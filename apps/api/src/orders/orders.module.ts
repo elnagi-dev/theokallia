@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service'
 import { OrdersController } from './orders.controller'
 import { PrismaModule } from '../prisma/prisma.module'
 import { OrdersProcessor } from './orders.processor'
+import { CouponsModule } from '../coupons/coupons.module'
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { OrdersProcessor } from './orders.processor'
     BullModule.registerQueue({
       name: 'orders',
     }),
+    CouponsModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersProcessor],

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/stores/auth-store'
 import { usePendingOrder } from '@/lib/hooks/use-orders'
 import CheckoutForm from '@/components/checkout/checkout-form'
 import OrderSummary from '@/components/checkout/order-summary'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ViewTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -16,6 +16,9 @@ export default function CheckoutPage() {
   const { data: dbCart, isLoading: cartLoading } = useCart(isAuthenticated)
   const { pendingOrder, isLoading: ordersLoading } = usePendingOrder()
   const router = useRouter()
+  
+  const [appliedDiscount, setAppliedDiscount] = useState(0)
+  const [appliedCouponCode, setAppliedCouponCode] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -63,11 +66,23 @@ export default function CheckoutPage() {
           <div className="flex-1">
             <CheckoutForm 
               onPaymentInitiated={() => {}} 
-              isPending={false} 
+              isPending={false}
+              onCouponApplied={(discount, code) => {
+                setAppliedDiscount(discount)
+                setAppliedCouponCode(code)
+              }}
+              onCouponCleared={() => {
+                setAppliedDiscount(0)
+                setAppliedCouponCode('')
+              }}
             />
           </div>
           <ViewTransition name="order-summary">
-            <OrderSummary />
+            <OrderSummary
+              shippingFee={pendingOrder?.shippingFee ?? 0}
+              discount={appliedDiscount}
+              couponCode={appliedCouponCode}
+            />
           </ViewTransition>
         </div>
 

@@ -3,6 +3,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
 import { PrismaService } from '../prisma/prisma.service'
 import { OrdersService } from './orders.service'
+import { CouponsService } from '../coupons/coupons.service'
 
 @Processor('orders')
 export class OrdersProcessor extends WorkerHost {
@@ -11,6 +12,7 @@ export class OrdersProcessor extends WorkerHost {
   constructor(
     private prisma: PrismaService,
     private ordersService: OrdersService,
+    private couponsService: CouponsService,
   ) {
     super()
   }
@@ -33,19 +35,33 @@ export class OrdersProcessor extends WorkerHost {
 
     if (!order) return
 
-    // Only cancel if it's still pending
     if (order.status === 'pending') {
       this.logger.log(`Order ${orderId} expired. Cancelling and releasing stock.`)
-      
-      await this.prisma.client.$transaction([
-        this.prisma.client.order.update({
+
+      await this.prisma.client.$transaction(async (tx) => {
+        // Cancel the order
+        await tx.order.update({
           where: { id: orderId },
           data: { status: 'cancelled' },
-        }),
-        this.prisma.client.stockReservation.deleteMany({
+        })
+
+        // Release stock reservations
+        await tx.stockReservation.deleteMany({
           where: { orderId },
-        }),
-      ])
+        })
+
+        // Rollback coupon usage if a coupon was applied
+        if (order.couponId) {
+          await tx.couponUse.deleteMany({
+            where: { orderId },
+          })
+
+          await tx.coupon.update({
+            where: { id: order.couponId },
+            data: { usedCount: { decrement: 1 } },
+          })
+        }
+      })
     }
   }
 }

@@ -18,6 +18,7 @@ import { PaymentsModule } from './payments/payments.module'
 import { RateLimitModule } from './rate-limit/rate-limit.module'
 import { UploadModule } from './upload/upload.module'
 import { ContentModule } from './content/content.module'
+import { CouponsModule } from './coupons/coupons.module'
 import { AuthModule as BetterAuthModule } from '@thallesp/nestjs-better-auth'
 import { auth } from './auth/auth'
 import * as Joi from 'joi'
@@ -63,6 +64,7 @@ import * as Joi from 'joi'
     CartModule,
     WishlistModule,
     OrdersModule,
+    CouponsModule,
     PaymentsModule,
     RateLimitModule,
     UploadModule,

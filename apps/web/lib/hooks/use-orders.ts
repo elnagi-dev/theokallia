@@ -40,6 +40,7 @@ interface Order {
   updatedAt: string
   items: OrderItem[]
   shippingAddress: ShippingAddress
+  shippingFee?: number
 }
 
 // fetchers
@@ -54,7 +55,7 @@ const fetchOrderById = async (id: string): Promise<Order> => {
   return res.data
 }
 
-const createOrder = async (payload: { shippingAddress: ShippingAddress }): Promise<Order> => {
+const createOrder = async (payload: { shippingAddress: ShippingAddress; couponCode?: string }): Promise<Order> => {
   const res = await api.post('/orders', payload)
   return res.data
 }
